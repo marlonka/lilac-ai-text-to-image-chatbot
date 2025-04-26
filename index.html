@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image AI Chat UI - Final</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- SVG Icon Definitions -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-history" viewBox="0 0 20 20"> <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd" /> </symbol>
+        <symbol id="icon-new-page" viewBox="0 0 20 20"> <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.25a.75.75 0 0 0-1.5 0v2.5h-2.5a.75.75 0 0 0 0 1.5h2.5v2.5a.75.75 0 0 0 1.5 0v-2.5h2.5a.75.75 0 0 0 0-1.5h-2.5v-2.5Z" clip-rule="evenodd" /> </symbol>
+        <symbol id="icon-images" viewBox="0 0 20 20"> <path fill-rule="evenodd" d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.19l-2.72-2.72a.75.75 0 0 0-1.06 0L9 12.53l-1.72-1.72a.75.75 0 0 0-1.06 0L3.25 13.78a.75.75 0 0 0-.75.75Zm-.75-6.56a.75.75 0 0 1 .75-.75h13.5a.75.75 0 0 1 .75.75v.09l-1.57 1.57a.75.75 0 0 1-1.06 0L13 7.03l-3.72 3.72a.75.75 0 0 1-1.06 0L4.75 7.28l-1.57 1.57v-.09ZM5.5 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" clip-rule="evenodd" /> </symbol>
+        <symbol id="icon-download" viewBox="0 0 20 20"> <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.25a.75.75 0 0 0-1.5 0v4.69L7.03 9.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 1 0-1.06-1.06L10.75 11.44V6.75Z" clip-rule="evenodd" /> </symbol>
+        <symbol id="icon-attach" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M4.5 1.75a.75.75 0 0 0-.75.75V11c0 2.21 1.79 4 4 4s4-1.79 4-4V3.75a2.25 2.25 0 0 0-4.5 0v7.5a.75.75 0 0 0 1.5 0V4.5a.75.75 0 0 1 1.5 0V11a.5.5 0 0 1-1 0V3.75a.75.75 0 0 1-.75-.75V3c0-.414.336-.75.75-.75s.75.336.75.75v8c0 1.38-1.12 2.5-2.5 2.5S5.5 12.38 5.5 11V2.5a.75.75 0 0 1 .75-.75H4.5Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-comment" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H6.75a.75.75 0 0 0-.53.22L3.97 14.47a.75.75 0 0 1-1.22-.53v-1.94A1.75 1.75 0 0 0 1 10.25v-7.5ZM2.5 2.75a.25.25 0 0 0-.25.25v7.25c0 .138.112.25.25.25h1.5a.75.75 0 0 0 .75-.75V9.5a.75.75 0 0 1 .75-.75h7a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25H2.5Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-send" viewBox="0 0 16 16"> <path d="M1.724 1.053a.75.75 0 0 0-.724.79L1.99 8.87a.75.75 0 0 0 .74.63h5.02a.75.75 0 0 1 0 1.5H2.73a2.25 2.25 0 0 1-2.218-1.893L.018 2.84a2.25 2.25 0 0 1 2.95-2.53l11.75 5a2.25 2.25 0 0 1 0 4.18l-11.75 5a2.25 2.25 0 0 1-2.95-2.53l.494-5.97a.75.75 0 0 0-.74-.79Z"/> </symbol>
+        <symbol id="icon-cross-medium" viewBox="0 0 16 16"> <path d="M4.28 3.22a.75.75 0 0 0-1.06 1.06L6.94 8l-3.72 3.72a.75.75 0 1 0 1.06 1.06L8 9.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L9.06 8l3.72-3.72a.75.75 0 0 0-1.06-1.06L8 6.94 4.28 3.22Z"/> </symbol>
+        <symbol id="icon-edit-image" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M11.39 1.97a.75.75 0 0 1 1.06 0l1.6 1.6a.75.75 0 0 1 0 1.06L6.4 13.28a.75.75 0 0 1-.38.22l-2.5.5a.75.75 0 0 1-.83-.83l.5-2.5a.75.75 0 0 1 .22-.38L11.4 1.97Zm.94 1.06L4.68 10.68l-.3 1.5 1.5-.3L13.53 4.24l-.6-.6Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-resize" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M9 1.75a.75.75 0 0 1 .75.75v3.04l2.78-2.78a.75.75 0 0 1 1.06 1.06L10.56 7H13.5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-.75.75h-3.04l2.78 2.78a.75.75 0 1 1-1.06 1.06L9 10.56V13.5a.75.75 0 0 1-1.5 0v-3.04L4.72 13.28a.75.75 0 1 1-1.06-1.06L6.44 9H3.5a.75.75 0 0 1-.75-.75v-1.5A.75.75 0 0 1 3.5 6h3.04L3.72 3.22a.75.75 0 0 1 1.06-1.06L7.56 5V2.5A.75.75 0 0 1 9 1.75Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-video2" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M1 4.75A1.75 1.75 0 0 1 2.75 3h7.5A1.75 1.75 0 0 1 12 4.75v2.316l2.78-1.668a.75.75 0 0 1 1.22.632v4.64a.75.75 0 0 1-1.22.632L12 9.934V11.25A1.75 1.75 0 0 1 10.25 13H2.75A1.75 1.75 0 0 1 1 11.25v-6.5ZM2.5 4.75a.25.25 0 0 0-.25.25v6.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25V4.75a.25.25 0 0 0-.25-.25h-7.5Zm10.5 1.47-2 1.2v2.16l2 1.2V6.22Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-upload" viewBox="0 0 20 20"> <path fill-rule="evenodd" d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.77l1.97 1.97a.75.75 0 1 0 1.06-1.06l-3.25-3.25a.75.75 0 0 0-1.06 0L6.22 5.68a.75.75 0 1 0 1.06 1.06l1.97-1.97v8.48ZM6.75 16a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-gallery" viewBox="0 0 20 20"> <path fill-rule="evenodd" d="M1.75 2A1.75 1.75 0 0 0 0 3.75v12.5C0 17.76 1.24 19 2.75 19h14.5c1.51 0 2.75-1.24 2.75-2.75V3.75C20 2.24 18.76 1 17.25 1H2.75A1.75 1.75 0 0 0 1 2.75V2ZM2.5 3.75a.25.25 0 0 1 .25-.25h14.5a.25.25 0 0 1 .25.25v9.93l-2.72-2.72a.75.75 0 0 0-1.06 0L9 15.44l-1.72-1.72a.75.75 0 0 0-1.06 0l-3.97 3.97a.25.25 0 0 1-.42-.17V3.75ZM5.5 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" clip-rule="evenodd"/> </symbol>
+        <symbol id="icon-terminal" viewBox="0 0 24 24"> <polyline points="4 17 10 11 4 5"></polyline> <line x1="12" x2="20" y1="19" y2="19"></line> </symbol>
+    </svg>
+
+    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+    <div class="app-container">
+        <section class="chat-column">
+            <header class="chat-header glassmorphism-container">
+                <button class="btn-icon-header" aria-label="Start new chat">
+                    <svg class="icon size-4"><use xlink:href="#icon-new-page"></use></svg>
+                </button>
+            </header>
+
+            <div class="conversation-area">
+                <div class="message-list" id="messageList">
+                    <!-- Loading Indicator Placeholder -->
+                    <div id="loadingIndicator" class="message-wrapper ai-message hidden">
+                         <div class="message-content-wrapper">
+                            <div class="loading-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="input-area-spacer"></div>
+            </div>
+
+            <footer class="input-container">
+                <div class="input-area">
+                    <div id="inputImagePreviewContainer" class="input-image-preview-container hidden">
+                        <img id="inputImagePreview" src="#" alt="Image preview"/>
+                        <button id="removeInputImagePreview" class="btn-remove-preview" aria-label="Remove image preview">
+                            <svg class="icon size-3"><use xlink:href="#icon-cross-medium"></use></svg>
+                        </button>
+                    </div>
+                    <textarea class="input-textarea" placeholder="Describe the image you want to create or edit..." rows="1" id="messageTextarea"></textarea>
+                    <div class="input-controls">
+                        <div class="controls-left">
+                            <button type="button" class="btn-input-pill" aria-label="Attach file" id="attachFileButton">
+                                Upload Image
+                            </button>
+                            <button type="button" class="btn-input-pill image-context-counter hidden" aria-label="Image context count" id="imageContextCounter" title="Click to clear image context">
+                                <svg class="icon size-3"><use xlink:href="#icon-images"></use></svg>
+                                <span class="counter-text">0 Images</span>
+                            </button>
+                            <!-- Custom Quality Dropdown -->
+                            <div id="customQualityDropdown" class="custom-dropdown">
+                                <button type="button" id="qualityDropdownButton" class="btn-input quality-selector-pill custom-dropdown-toggle">
+                                    <span id="qualityDropdownLabel">Quality: Auto</span>
+                                    <!-- We'll reuse the chevron-down icon -->
+                                    <svg class="icon size-4 dropdown-arrow"><use xlink:href="#icon-chevron-down"></use></svg>
+                                </button>
+                                <div id="qualityDropdownOptions" class="custom-dropdown-options hidden">
+                                    <div class="custom-dropdown-option" data-value="auto">Quality: Auto</div>
+                                    <div class="custom-dropdown-option" data-value="low">Quality: Low</div>
+                                    <div class="custom-dropdown-option" data-value="medium">Quality: Medium</div>
+                                    <div class="custom-dropdown-option" data-value="high">Quality: High</div>
+                                </div>
+                            </div>
+                            <!-- End Custom Quality Dropdown -->
+                            <span class="model-indicator">gpt-image-1</span>
+                        </div>
+                        <div class="controls-right">
+                            <button class="btn-text-input how-to-use">
+                                <svg class="icon size-3_5"><use xlink:href="#icon-comment"></use></svg> How to use
+                            </button>
+                            <button class="btn-icon-input send" disabled aria-label="Send message" id="sendButton">
+                                <svg class="icon size-4"><use xlink:href="#icon-send"></use></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </section>
+
+        <aside class="image-preview-column hidden" id="imagePreviewColumn">
+            <header class="preview-header glassmorphism-container">
+                <button class="btn-icon-header" aria-label="Download large image">
+                    <svg class="icon size-4"><use xlink:href="#icon-download"></use></svg>
+                </button>
+                 <button class="btn-icon-header" id="closePreviewButton" aria-label="Close image preview">
+                    <svg class="icon size-4"><use xlink:href="#icon-cross-medium"></use></svg>
+                </button>
+            </header>
+            <div class="preview-image-container">
+                 <img src="" alt="Selected image preview" id="previewImageLarge">
+            </div>
+            <footer class="preview-actions">
+                 <button class="btn-input-pill">
+                     <svg class="icon size-4"><use xlink:href="#icon-edit-image"></use></svg> Fix yellow tint
+                 </button>
+                 <button class="btn-input-pill">
+                     <svg class="icon size-3"><use xlink:href="#icon-resize"></use></svg> Upscale
+                 </button>
+                 <button class="btn-input-pill">
+                     <svg class="icon size-3"><use xlink:href="#icon-video2"></use></svg> Create video
+                 </button>
+            </footer>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html><link rel="stylesheet" href="index.css">
+<script src="index.tsx" type="module"></script>

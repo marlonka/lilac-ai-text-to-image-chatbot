@@ -1,0 +1,379 @@
+:root {
+    --font-main: 'Inter', sans-serif;
+
+    /* Neutral Palette */
+    --neutral-100: #f5f5f5; --neutral-200: #e5e5e5; --neutral-300: #d4d4d4; --neutral-400: #a3a3a3; --neutral-500: #737373; --neutral-600: #525252; --neutral-700: #404040; --neutral-800: #262626; --neutral-850: #1f1f1f; --neutral-900: #171717;
+
+    /* Lilac/Violet Palette */
+    --lilac-200: #ddd6fe; --lilac-300: #c4b5fd; --lilac-500: #8b5cf6; --lilac-600: #7c3aed; --lilac-700: #6d28d9; --lilac-800: #5b21b6; --lilac-950: #2e1065;
+    --lilac-indicator-bg: rgba(124, 58, 237, 0.1); /* bg-purple-500/10 */
+    --lilac-indicator-hover-bg: rgba(109, 40, 217, 0.1); /* bg-purple-700/10 */
+    --lilac-indicator-border: rgba(167, 139, 250, 0.4); /* border-purple-400/40 */
+    --lilac-800-border: rgba(91, 33, 182, 0.6);
+    --lilac-950-glass: rgba(46, 16, 101, 0.1);
+    --lilac-action-bg: rgba(91, 33, 182, 0.4);
+    --lilac-action-hover-bg: rgba(109, 40, 217, 0.5);
+
+    /* Other */
+    --bg-overlay: rgba(23, 23, 23, 0.8);
+}
+
+/* --- Base, Scrollbar, Layout --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: var(--font-main); background-color: var(--neutral-900); color: var(--neutral-200); }
+body { min-height: 100vh; overflow: hidden; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--neutral-850); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: var(--neutral-600); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neutral-500); }
+
+.app-container { display: flex; height: 100vh; }
+.chat-column { flex: 1; display: flex; flex-direction: column; background-color: var(--neutral-900); position: relative; overflow: hidden; min-width: 320px; }
+.image-preview-column { flex: 0 0 40%; max-width: 50%; background-color: var(--neutral-850); border-left: 2px solid var(--neutral-800); display: flex; flex-direction: column; transition: flex-basis 0.3s ease, opacity 0.3s ease, transform 0.3s ease, border-left 0.3s ease; opacity: 1; transform: translateX(0); height: 100%; }
+.image-preview-column.hidden { flex-basis: 0; opacity: 0; transform: translateX(100%); pointer-events: none; border-left: none; overflow: hidden; }
+
+/* --- Shared Glassmorphism Style --- */
+.glassmorphism-container { background-color: rgba(23, 23, 23, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(82, 82, 82, 0.3); border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+
+/* --- Chat Header --- */
+.chat-header { position: absolute; left: 0.5rem; top: 0.5rem; z-index: 20; display: flex; height: auto; align-items: center; gap: 0.25rem; padding: 0.25rem; }
+
+/* --- Conversation Area & Messages --- */
+.conversation-area { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; padding: 0 1rem; background-image: radial-gradient(var(--neutral-700) 1px, transparent 1px); background-size: 10px 10px; }
+.message-list { flex-grow: 1; overflow-y: auto; padding: 4rem 0.25rem 1.5rem 0.25rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.input-area-spacer { height: 0.5rem; }
+.message-wrapper { display: flex; flex-direction: column; max-width: 85%; position: relative; }
+.user-message { align-items: flex-end; margin-left: auto; }
+.ai-message { align-items: flex-start; margin-right: auto; }
+.message-content-wrapper { display: flex; flex-direction: column; gap: 0.5rem; }
+.message-bubble { border-radius: 1rem; padding: 0.625rem 1rem; font-size: 0.875rem; line-height: 1.5; width: fit-content; max-width: 100%; word-wrap: break-word; }
+.user-bubble { background-color: var(--neutral-800); }
+.ai-bubble { background-color: transparent; padding-left: 0; padding-right: 0;}
+.message-media { margin-top: 0.25rem; }
+.image-thumbnail-container { position: relative; max-height: 18rem; max-width: 18rem; overflow: hidden; border-radius: 0.5rem; background-color: var(--neutral-800); display: inline-block; border: 1px solid var(--neutral-700); }
+.image-thumbnail { display: block; height: auto; max-height: 18rem; width: auto; max-width: 100%; object-fit: contain; border-radius: 0.5rem; }
+.interactive-thumbnail { cursor: pointer; }
+.thumbnail-overlay { position: absolute; top: 0.25rem; right: 0.25rem; opacity: 0; transition: opacity 0.3s ease; }
+.image-thumbnail-container:hover .thumbnail-overlay { opacity: 1; }
+.message-sub-info { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8rem; color: var(--neutral-300); margin-top: 0.375rem; }
+.message-sub-info .icon { color: var(--neutral-400); }
+.ai-action-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; max-width: 100%; }
+.message-meta { margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.75rem; color: var(--neutral-500); opacity: 0; transition: opacity 0.2s ease; }
+.message-wrapper:hover .message-meta { opacity: 1; }
+
+/* --- Loading Indicator --- */
+#loadingIndicator.hidden { display: none; }
+.loading-dots { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px; }
+.loading-dots span { display: inline-block; width: 8px; height: 8px; background-color: var(--neutral-500); border-radius: 50%; animation: loading-bounce 1.4s infinite ease-in-out both; }
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes loading-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+/* --- Input Area --- */
+.input-container { padding: 0.5rem 1rem 0.75rem 1rem; position: relative; z-index: 10; }
+.input-area { display: flex; flex-direction: column; gap: 0.5rem; background-color: var(--lilac-950-glass); backdrop-filter: blur(10px); border: 1px solid var(--lilac-800-border); border-radius: 1.5rem; padding: 0.5rem 0.75rem; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); }
+#inputImagePreviewContainer { padding: 0.5rem 0 0 0; margin-bottom: 0.25rem; position: relative; align-self: flex-start; }
+#inputImagePreviewContainer.hidden { display: none; padding: 0; }
+#inputImagePreview { max-height: 60px; max-width: 100px; border-radius: 4px; object-fit: cover; border: 1px solid var(--neutral-700); }
+.btn-remove-preview { position: absolute; top: 0px; right: -5px; width: 1rem; height: 1rem; border-radius: 50%; background-color: rgba(0, 0, 0, 0.6); color: var(--neutral-300); font-size: 0.6rem; line-height: 1; padding: 0; }
+.btn-remove-preview:hover { background-color: rgba(0, 0, 0, 0.8); color: white; }
+.btn-remove-preview .icon { width: 0.75rem; height: 0.75rem; }
+.input-textarea { flex-grow: 1; background: transparent; border: none; outline: none; resize: none; color: var(--neutral-200); font-family: inherit; font-size: 0.875rem; line-height: 1.5; min-height: calc(1.5em + 0.5rem); padding: 0.625rem 0.5rem; max-height: 15rem; overflow-y: auto; width: 100%; }
+.input-textarea::placeholder { color: var(--neutral-500); }
+.input-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 0.25rem 0.25rem 0.25rem; }
+.controls-left, .controls-right { display: flex; align-items: center; gap: 0.5rem; }
+.controls-right { gap: 0.5rem; }
+
+/* Model Indicator - Styled like feature pill */
+.model-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid var(--lilac-indicator-border);
+    background-color: var(--lilac-indicator-bg);
+    font-size: 0.75rem; /* 12px */
+    font-weight: 500;
+    height: 2rem; /* Match input buttons */
+    padding: 0 0.75rem; /* 12px horizontal padding */
+    color: var(--lilac-300);
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    cursor: default;
+}
+.model-indicator:hover {
+     background-color: var(--lilac-indicator-hover-bg);
+     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* New Style for Input Pill Buttons (like Upload) */
+.btn-input-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px; /* Fully rounded */
+    border: 1px solid var(--lilac-indicator-border);
+    background-color: var(--lilac-indicator-bg);
+    font-size: 0.75rem; /* 12px */
+    font-weight: 500;
+    height: 2rem; /* Match input buttons */
+    padding: 0 0.75rem; /* 12px horizontal padding */
+    color: var(--lilac-300);
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    cursor: pointer; /* Make it look clickable */
+}
+
+.btn-input-pill:hover {
+    /* Use hover style similar to action pills */
+    background-color: var(--lilac-action-hover-bg); /* More noticeable background change */
+    border-color: var(--lilac-600); /* Darker border on hover */
+    color: var(--lilac-200); /* Slightly brighter text */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* Slightly stronger shadow */
+}
+
+/* --- Image Preview Styles --- */
+.preview-header { position: absolute; top: 0.25rem; right: 0.25rem; z-index: 10; display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.375rem; background: none; }
+.preview-header.glassmorphism-container { left: auto; background-color: rgba(31, 31, 31, 0.7); border-color: rgba(82, 82, 82, 0.2); }
+.preview-image-container { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; padding: 3rem 0.5rem 0.5rem 0.5rem; }
+#previewImageLarge { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0.5rem; }
+.preview-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; padding: 0.5rem 0.5rem 0.75rem 0.5rem; }
+
+/* --- BUTTON STYLES --- */
+button { cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease; border: none; background: none; color: inherit; font-family: inherit; padding: 0; display: flex; align-items: center; justify-content: center; outline-offset: 2px; }
+button:focus-visible { outline: 2px solid var(--lilac-500); }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.btn-icon-header { width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; color: var(--neutral-400); }
+.btn-icon-header:hover { background-color: var(--neutral-800); color: var(--neutral-200); }
+.btn-icon-overlay { width: 2rem; height: 2rem; background-color: rgba(30, 30, 30, 0.8); color: var(--neutral-100); border-radius: 0.375rem; backdrop-filter: blur(2px); }
+.btn-icon-overlay:hover { background-color: rgba(50, 50, 50, 0.8); }
+.btn-icon-input { width: 2rem; height: 2rem; border-radius: 9999px; background-color: var(--neutral-700); color: var(--neutral-300); }
+.btn-icon-input.attach { background-color: var(--neutral-700); }
+.btn-icon-input.send { background-color: var(--neutral-700); color: white; }
+.btn-icon-input:hover:not(:disabled) { background-color: var(--neutral-600); }
+.btn-text-input { height: 2rem; padding: 0 1rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; gap: 0.375rem; color: var(--neutral-400); }
+.btn-text-input.how-to-use:hover { background-color: var(--neutral-700); color: var(--neutral-200); }
+.btn-action-pill { height: 2.5rem; padding: 0 1rem; border-radius: 9999px; background-color: var(--lilac-action-bg); color: var(--lilac-200); font-size: 0.875rem; font-weight: 500; }
+.btn-action-pill:hover { background-color: var(--lilac-action-hover-bg); }
+.btn-meta { font-weight: 600; color: var(--neutral-500); }
+
+/* --- Icon Sizes --- */
+.icon { display: inline-block; width: 1em; height: 1em; fill: currentColor; stroke: none; vertical-align: middle; /* Helps alignment */ }
+.size-2_5 { width: 0.625rem; height: 0.625rem; }
+.size-3   { width: 0.75rem;  height: 0.75rem; }
+.size-3_5 { width: 0.875rem; height: 0.875rem; }
+.size-4   { width: 1rem;     height: 1rem; }
+.hidden { display: none !important; }
+
+/* --- Image Context Counter Pill Styles --- */
+.image-context-counter {
+    gap: 0.375rem;
+    padding: 0 0.6rem 0 0.5rem;
+    cursor: pointer;
+}
+
+.image-context-counter .icon {
+    flex-shrink: 0;
+}
+
+/* --- Styles for Quality Selector --- */
+.select-pill-wrapper {
+    position: relative;
+    display: inline-flex; /* Use inline-flex to match button behavior */
+    align-items: center;
+    height: 2rem; /* Match height of .btn-input-pill */
+}
+
+.select-input-pill {
+    /* Match styling from .btn-input-pill */
+    display: inline-flex; /* Already set, but good for clarity */
+    align-items: center;
+    height: 100%; /* Fill the wrapper height */
+    border-radius: 9999px;
+    border: 1px solid var(--lilac-indicator-border); /* Use lilac border */
+    background-color: var(--lilac-indicator-bg);  /* Use lilac background */
+    color: var(--lilac-300);                     /* Use lilac text color */
+    font-size: 0.75rem;
+    font-weight: 500;                           /* Match font weight */
+    padding: 0 0.75rem;                         /* Match horizontal padding */
+    padding-right: 1.75rem; /* Increase right padding slightly more for arrow clearance */
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    transition: all 0.15s ease; /* Match transition */
+    white-space: nowrap; /* Prevent text wrapping */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Match shadow */
+}
+
+.select-input-pill:hover {
+    /* Match hover styles from .btn-input-pill:hover */
+    background-color: var(--lilac-action-hover-bg);
+    border-color: var(--lilac-600);
+    color: var(--lilac-200);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.select-input-pill:focus-visible {
+     /* Match focus style */
+     box-shadow: 0 0 0 2px var(--lilac-800-border); /* Using a slightly different focus var */
+     border-color: var(--lilac-500);
+}
+
+.select-arrow {
+    position: absolute;
+    right: 0.75rem; /* Adjust arrow position based on padding */
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--lilac-300); /* Match text color */
+    opacity: 0.8; /* Slightly more visible */
+}
+/* --- End Quality Selector Styles --- */
+
+/* We already have a .hidden class defined elsewhere */
+/* .hidden { display: none !important; } */
+
+
+/* --- Error Message Styling (Added from previous steps) --- */
+/* ... existing error message styles ... */
+
+/* --- Custom Dropdown Styles (REVISED) --- */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Style the button like the other pills */
+#qualityDropdownButton.custom-dropdown-toggle {
+    /* Base styles from .btn-input-pill */
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between; /* Push label and arrow apart */
+    height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--lilac-indicator-border);
+    background-color: var(--lilac-indicator-bg); /* Use the standard pill background */
+    color: var(--lilac-300);
+    font-size: 0.75rem; /* 12px */
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    white-space: nowrap;
+    min-width: 110px; /* Give it a minimum width */
+    text-align: left; /* Ensure text aligns left */
+    appearance: none; /* Remove default button appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+#qualityDropdownButton.custom-dropdown-toggle:hover {
+    /* Hover styles from .btn-input-pill:hover */
+    background-color: var(--lilac-action-hover-bg);
+    border-color: var(--lilac-600);
+    color: var(--lilac-200);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Style the arrow icon inside the button */
+.custom-dropdown-toggle .dropdown-arrow {
+    margin-left: 0.5rem;
+    color: var(--lilac-300); /* Match button text color */
+    transition: transform 0.2s ease-in-out;
+    flex-shrink: 0;
+    width: 0.75rem; /* Match size-3 */
+    height: 0.75rem; /* Match size-3 */
+    opacity: 0.8;
+}
+
+/* Rotate arrow when dropdown is open */
+.custom-dropdown.open .custom-dropdown-toggle .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* Options List Container - Apply Glassmorphism */
+.custom-dropdown-options {
+    position: absolute;
+    bottom: calc(100% + 6px); /* Position above the button */
+    left: 0;
+    width: 100%; /* Match the button width */
+    min-width: fit-content; /* Allow it to be wider if needed */
+    /* --- Glassmorphism --- */
+    background-color: rgba(46, 16, 101, 0.4); /* Base color of --lilac-950 with higher alpha */
+    backdrop-filter: blur(8px);               /* Keep the blur */
+    border: 1px solid var(--lilac-800-border); /* Keep the same border */
+    border-radius: 0.75rem; /* Keep the radius */
+    /* --- End Glassmorphism --- */
+    padding: 0.375rem; /* Keep padding */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); /* Keep shadow */
+    z-index: 10;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(5px);
+    visibility: hidden;
+    transition: opacity 0.15s ease-out, transform 0.15s ease-out, visibility 0.15s;
+}
+
+/* Show options when container has 'open' class */
+.custom-dropdown.open .custom-dropdown-options {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+/* Individual Option Styling */
+.custom-dropdown-option {
+    padding: 0.5rem 0.75rem; /* Consistent padding */
+    color: var(--lilac-200); /* Brighter text for options */
+    cursor: pointer;
+    font-size: 0.8125rem; /* 13px */
+    white-space: nowrap;
+    border-radius: 0.375rem; /* Slightly rounded corners for options */
+    transition: background-color 0.15s ease, color 0.15s ease;
+    margin: 0.125rem 0; /* Small gap between options */
+}
+
+.custom-dropdown-option:hover {
+    background-color: var(--lilac-action-bg); /* Use action background on hover */
+    color: var(--neutral-100); /* White text on hover */
+}
+
+/* Style for the currently selected item (highlight) */
+.custom-dropdown-option.selected {
+    background-color: var(--lilac-600); /* Darker accent for selected */
+    color: var(--neutral-100);
+    font-weight: 600;
+}
+.custom-dropdown-option.selected:hover {
+     background-color: var(--lilac-700); /* Slightly darker on hover if selected */
+}
+
+/* --- Ensure .hidden class works as expected --- */
+.hidden {
+    display: none !important;
+}
+
+/* Remove previous attempt styles if they exist */
+.quality-selector-pill {
+    /* Can likely remove this rule entirely now */
+}
+.quality-selector-wrapper {
+    /* Remove this rule */
+}
+.select-pill-wrapper {
+    /* Remove this rule */
+}
+.select-input-pill {
+     /* Remove this rule */
+}
+.select-arrow {
+    /* Remove this rule */
+}
+
+/* ... rest of existing styles ... */

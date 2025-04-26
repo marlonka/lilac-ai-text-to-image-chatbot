@@ -2,7 +2,7 @@
 
 This is a simple web-based chatbot application that allows users to generate and edit images using OpenAI's `gpt-image-1` model. It features a chat interface where users can interact with the AI by providing text prompts and optionally uploading images for context-based editing.
 
-![Screenshot of the Lilac AI Chatbot interface](texttoimageAIchatbotlilacaccent.png)
+![Screenshot](lilac_ai_text_to_image_chatbot_screenshot.png) 
 
 ## Key Features
 

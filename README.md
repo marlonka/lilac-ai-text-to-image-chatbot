@@ -93,4 +93,4 @@ You need to run both the frontend (Vite dev server) and the backend (Node.js ser
 *   Error handling can be further improved.
 *   Image editing capabilities via the API are basic and depend on the prompt and context images provided.
 *   Translation covers most UI elements but might miss edge cases or dynamically generated text from the API itself.
-*   The action buttons in the preview panel ("Fix yellow tint", etc.) are placeholders and not functional.
+*   The action buttons in the preview panel ("Fix yellow tint", "Remove object", "Enhance details") are placeholders for future features and are currently commented out in the HTML.

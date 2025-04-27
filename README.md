@@ -29,7 +29,7 @@ A simple web-based chatbot interface for interacting with OpenAI's `gpt-image-1`
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/marlonka/lilac-ai-text-to-image-chatbot.git
     cd lilac-ai-text-to-image-chatbot
     ```
 2.  **Backend API Key:**

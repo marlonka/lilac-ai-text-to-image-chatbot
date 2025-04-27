@@ -8,6 +8,8 @@ The user wants to develop a functional chatbot application based on an existing 
 
 **Addendum (July 26, 2024):** User requested the ability to select image generation quality (low, medium, high, auto) via the UI to help manage API costs during development and testing.
 
+The user also wants to add a "How to use" button to the application interface to provide guidance to users. Additionally, the browser console shows persistent WebSocket connection errors during development, which need investigation and resolution. Fixing the underlying connection errors is prioritized to ensure a stable development environment.
+
 ## Key Challenges and Analysis
 
 1.  **API Key Security:** The OpenAI API key is confidential and must *not* be exposed in the frontend code (`index.tsx`). A backend server acting as a proxy is **essential** to protect the key.
@@ -21,6 +23,12 @@ The user wants to develop a functional chatbot application based on an existing 
 5.  **State Management:** Managing the `imageContextList` (array of data URLs) state, enforcing the limit (e.g., 10 images), and updating the associated UI counter. Managing the user's currently selected upload (`selectedFile`) separately before it's added to the context list upon sending.
 6.  **Backend Implementation:** Building a Node.js/Express backend using TypeScript.
 7.  **UI State Management:** Managing frontend state for both the `imageContextList` and the newly added `selectedQuality`.
+8.  **WebSocket Errors:**
+    *   The console logs `WebSocket connection to 'ws://localhost:5173/' failed:` repeatedly, originating from `client:1035`.
+    *   Port `5173` is the default port for the Vite development server.
+    *   This strongly suggests the errors are related to Vite's Hot Module Replacement (HMR) client trying to establish a WebSocket connection with the dev server and failing.
+    *   This might be due to network configuration, proxy issues, or the dev server itself having problems with its HMR WebSocket. It's less likely related to the application's own backend (`server/src/server.ts`), which currently only seems to expose HTTP endpoints.
+    *   These errors don't necessarily break the main application functionality (like image generation via HTTP) but can be annoying and might indicate HMR isn't working correctly (changes might require manual page reloads).
 
 ## High-level Task Breakdown
 
@@ -128,6 +136,21 @@ The user wants to develop a functional chatbot application based on an existing 
     *   **Description:** Ensure `.gitignore` (root and server) is correct. Use `git add .`, `git commit -m "Meaningful message"` frequently throughout development. Create a final commit before potentially pushing to GitHub.
     *   **Success Criteria:** Project is fully version controlled with a clean, logical history.
 
+**Phase 2: Implement "How to Use" Button**
+
+1.  **Task:** Add Button Element
+    *   Action: Locate the input area in `index.tsx`. Add a `<button>` element styled similarly to existing buttons, labeled "How to use". Position it near the send button.
+    *   Success Criteria: The button appears visually correct in the designated location in the browser.
+2.  **Task:** Implement Modal Component
+    *   Action: Create a basic React component for the modal (e.g., `HowToUseModal.tsx`). It should accept `isOpen` and `onClose` props. Style it as a simple overlay with a content area and a close button.
+    *   Success Criteria: Component structure is created. Basic styling allows it to function as an overlay.
+3.  **Task:** Add State and Toggle Logic
+    *   Action: In `index.tsx`, add a `useState` hook (e.g., `isHowToUseOpen`, `setIsHowToUseOpen`) initialized to `false`. Add an `onClick` handler to the "How to use" button that calls `setIsHowToUseOpen(true)`. Render the `<HowToUseModal>` component, passing the state variable to `isOpen` and a function calling `setIsHowToUseOpen(false)` to `onClose`.
+    *   Success Criteria: Clicking the "How to use" button opens the modal. Clicking the modal's close button (or potentially the overlay) closes it.
+4.  **Task:** Add Instructional Content
+    *   Action: Define simple "How to use" instructions (e.g., "1. Type a prompt describing the image you want. 2. Select quality and model. 3. Click send. 4. Optionally upload an image for context-based editing."). Add this text content inside the `HowToUseModal` component.
+    *   Success Criteria: The modal displays the defined instructional text when opened.
+
 ## Project Status Board
 
 *(Tasks updated based on pivot to Context List Flow + Quality Selector)*
@@ -163,6 +186,21 @@ The user wants to develop a functional chatbot application based on an existing 
     -   [x] 12. Code Cleanup & Structuring
     -   [x] 13. README Documentation
     -   [ ] 14. Final Git Setup & Commits
+
+**Phase 2: Implement "How to Use" Button**
+
+1.  **Task:** Add Button Element
+    *   Action: Locate the input area in `index.tsx`. Add a `<button>` element styled similarly to existing buttons, labeled "How to use". Position it near the send button.
+    *   Success Criteria: The button appears visually correct in the designated location in the browser.
+2.  **Task:** Implement Modal Component
+    *   Action: Create a basic React component for the modal (e.g., `HowToUseModal.tsx`). It should accept `isOpen` and `onClose` props. Style it as a simple overlay with a content area and a close button.
+    *   Success Criteria: Component structure is created. Basic styling allows it to function as an overlay.
+3.  **Task:** Add State and Toggle Logic
+    *   Action: In `index.tsx`, add a `useState` hook (e.g., `isHowToUseOpen`, `setIsHowToUseOpen`) initialized to `false`. Add an `onClick` handler to the "How to use" button that calls `setIsHowToUseOpen(true)`. Render the `<HowToUseModal>` component, passing the state variable to `isOpen` and a function calling `setIsHowToUseOpen(false)` to `onClose`.
+    *   Success Criteria: Clicking the "How to use" button opens the modal. Clicking the modal's close button (or potentially the overlay) closes it.
+4.  **Task:** Add Instructional Content
+    *   Action: Define simple "How to use" instructions (e.g., "1. Type a prompt describing the image you want. 2. Select quality and model. 3. Click send. 4. Optionally upload an image for context-based editing."). Add this text content inside the `HowToUseModal` component.
+    *   Success Criteria: The modal displays the defined instructional text when opened.
 
 ## Current Status / Progress Tracking
 

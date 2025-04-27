@@ -15,7 +15,7 @@ A simple web-based chatbot interface for interacting with OpenAI's `gpt-image-1`
 
 ## Screenshot
 
-![Chatbot Screenshot](lilac_ai_text_to_image_chatbot_screenshot_v1.png)
+![Chatbot Screenshot](lilac_ai_text_to_image_chatbot_screenshot_v1.1.png)
 
 ## Setup
 

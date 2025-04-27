@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const howToUseModalOverlay = document.getElementById('howToUseModalOverlay');
     const closeHowToUseModalButton = document.getElementById('closeHowToUseModal');
 
+    // === Add Settings Modal Elements ===
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsModalOverlay = document.getElementById('settingsModalOverlay');
+    const closeSettingsModalButton = document.getElementById('closeSettingsModal');
+    // ===================================
+
     // Type definition for the file object we store (for user upload preview)
     interface SelectedFile {
         name: string;
@@ -41,6 +47,96 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPreviewImageUrl: string | null = null;
     type ImageQuality = 'auto' | 'low' | 'medium' | 'high';
     let selectedQuality: ImageQuality = 'auto'; // Default quality
+    let currentLanguage = 'en'; // Default language
+
+    // --- Translation Store ---
+    const translations: { [lang: string]: { [key: string]: string } } = {
+        en: {
+            // Header
+            settingsAriaLabel: "Settings",
+            newChatAriaLabel: "Start new chat",
+            // Settings Modal
+            settingsTitle: "Settings",
+            languageLabel: "Language:",
+            // Input Area
+            inputPlaceholder: "Describe the image you want to create or edit...",
+            uploadButton: "Upload Image",
+            qualityLabelPrefix: "Quality: ", // Prefix for quality labels
+            howToUseButton: "How to use",
+            sendAriaLabel: "Send message",
+            // How To Use Modal
+            howToUseTitle: "How to Use",
+            // === NEW: How to Use Modal Content ===
+            howToUse_intro: "Here's a quick guide to generating images:",
+            howToUse_prompt_li: "<strong>Prompt:</strong> Type what you want to see in the text box. Be descriptive!",
+            howToUse_upload_li: "<strong>Upload (Optional):</strong> Click \"Upload Image\" to provide context for editing or inspiration. The uploaded image will appear above the text box and be added to the context list.",
+            howToUse_context_li: "<strong>Context:</strong> The number next to \"Upload Image\" shows how many images (uploaded or previously generated) will be sent with your next prompt (max 10). Click this number pill to clear the context.",
+            howToUse_quality_li: "<strong>Quality:</strong> Select the desired image quality (Low, Medium, High, or Auto). Lower quality is faster.",
+            howToUse_model_li: "<strong>Model:</strong> Shows the AI model being used (currently gpt-image-1).",
+            howToUse_send_li: "<strong>Send:</strong> Click the paper plane button or press Enter to generate your image.",
+            howToUse_preview_li: "<strong>Preview:</strong> Click any generated image thumbnail in the chat to see a larger version on the right.",
+            howToUse_download_li: "<strong>Download:</strong> Click the \"Download image\" button below a generated image, or the download icon in the preview panel.",
+            howToUse_newChat_li: "<strong>New Chat:</strong> Click the \"+\" button in the top-left corner to clear the chat, context, and input.",
+            // === NEW Translations ===
+            imageContextTooltip: "Click to clear image context",
+            previewDownloadAriaLabel: "Download large image",
+            previewCloseAriaLabel: "Close image preview",
+            aiMessageSubInfo: "Image AI generated",
+            aiMessageDownloadBtn: "Download image",
+            // === NEW: Preview Footer Buttons ===
+            previewAction_fixTint: "Fix yellow tint",
+            previewAction_upscale: "Upscale",
+            previewAction_createVideo: "Create video",
+            // === NEW: Image Context Counter ===
+            imageContextCounter_singular: "Image",
+            imageContextCounter_plural: "Images",
+            // =================================
+            // ======================================
+        },
+        de: {
+            // Header
+            settingsAriaLabel: "Einstellungen",
+            newChatAriaLabel: "Neuen Chat starten",
+            // Settings Modal
+            settingsTitle: "Einstellungen",
+            languageLabel: "Sprache:",
+            // Input Area
+            inputPlaceholder: "Beschreiben Sie das Bild, das Sie erstellen oder bearbeiten möchten...",
+            uploadButton: "Bild hochladen",
+            qualityLabelPrefix: "Qualität: ", // Keep or change prefix if needed in German
+            howToUseButton: "Anleitung",
+            sendAriaLabel: "Nachricht senden",
+            // How To Use Modal
+            howToUseTitle: "Anleitung",
+            // === NEW: How to Use Modal Content (German) ===
+            howToUse_intro: "Hier ist eine Kurzanleitung zum Generieren von Bildern:",
+            howToUse_prompt_li: "<strong>Eingabeaufforderung:</strong> Geben Sie in das Textfeld ein, was Sie sehen möchten. Seien Sie beschreibend!",
+            howToUse_upload_li: "<strong>Hochladen (Optional):</strong> Klicken Sie auf \"Bild hochladen\", um Kontext für die Bearbeitung oder Inspiration bereitzustellen. Das hochgeladene Bild erscheint über dem Textfeld und wird zur Kontextliste hinzugefügt.",
+            howToUse_context_li: "<strong>Kontext:</strong> Die Zahl neben \"Bild hochladen\" zeigt an, wie viele Bilder (hochgeladene oder zuvor generierte) mit Ihrer nächsten Eingabeaufforderung gesendet werden (max. 10). Klicken Sie auf diese Zahl, um den Kontext zu löschen.",
+            howToUse_quality_li: "<strong>Qualität:</strong> Wählen Sie die gewünschte Bildqualität (Niedrig, Mittel, Hoch oder Auto). Niedrigere Qualität ist schneller.",
+            howToUse_model_li: "<strong>Modell:</strong> Zeigt das verwendete KI-Modell (derzeit gpt-image-1).",
+            howToUse_send_li: "<strong>Senden:</strong> Klicken Sie auf die Schaltfläche mit dem Papierflieger oder drücken Sie die Eingabetaste, um Ihr Bild zu generieren.",
+            howToUse_preview_li: "<strong>Vorschau:</strong> Klicken Sie auf ein generiertes Bild-Miniaturbild im Chat, um eine größere Version auf der rechten Seite anzuzeigen.",
+            howToUse_download_li: "<strong>Herunterladen:</strong> Klicken Sie auf die Schaltfläche \"Bild herunterladen\" unter einem generierten Bild oder auf das Download-Symbol im Vorschaufenster.",
+            howToUse_newChat_li: "<strong>Neuer Chat:</strong> Klicken Sie auf die \"+\"-Schaltfläche oben links, um den Chat, den Kontext und die Eingabe zu löschen.",
+            // === NEW Translations (German) ===
+            imageContextTooltip: "Klicken, um den Bildkontext zu löschen",
+            previewDownloadAriaLabel: "Großes Bild herunterladen",
+            previewCloseAriaLabel: "Bildvorschau schließen",
+            aiMessageSubInfo: "Bild von KI generiert",
+            aiMessageDownloadBtn: "Bild herunterladen",
+            // === NEW: Preview Footer Buttons (German) ===
+            previewAction_fixTint: "Gelbstich beheben",
+            previewAction_upscale: "Hochskalieren",
+            previewAction_createVideo: "Video erstellen",
+            // === NEW: Image Context Counter (German) ===
+            imageContextCounter_singular: "Bild",
+            imageContextCounter_plural: "Bilder",
+            // ========================================
+            // =============================================
+        }
+    };
+    // ==========================
 
     // --- Helper Function to Add Image to Context List ---
     function addImageToContext(imageUrl: string | null) {
@@ -70,23 +166,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Function to Update Image Context Counter UI ---
-    function updateImageContextUI() {
+    // Add optional parameter 'langPackToUse'
+    function updateImageContextUI(langPackToUse?: { [key: string]: string }) {
         if (!imageContextCounter || !imageContextCounterText) {
             console.warn("Image context counter elements not found, UI cannot be updated.");
             return;
         }
 
+        // Use the provided langPack, OR look it up based on the global currentLanguage
+        const langPack = langPackToUse || translations[currentLanguage] || translations['en'];
         const count = imageContextList.length;
 
         if (count === 0) {
-            // Hide the counter if context is empty
             imageContextCounter.classList.add('hidden');
         } else {
-            // Show the counter and update text
-            imageContextCounterText.textContent = `${count} Image${count > 1 ? 's' : ''}`;
+            // Use translated singular/plural strings from the determined langPack
+            const imageText = count === 1 ? langPack.imageContextCounter_singular : langPack.imageContextCounter_plural;
+            imageContextCounterText.textContent = `${count} ${imageText}`; // Construct the text using translated term
             imageContextCounter.classList.remove('hidden');
         }
-        console.log(`🖼️ Image Context UI updated. Count: ${count}`);
+        // Log which language pack was effectively used (either passed in or looked up)
+        const effectiveLang = Object.keys(translations).find(key => translations[key] === langPack) || 'en (fallback)';
+        console.log(`🖼️ Image Context UI updated. Count: ${count}, Lang: ${effectiveLang}`);
     }
 
     // --- Function to clear the input preview area ---
@@ -143,17 +244,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = e.target?.result as string | null;
                     if (result) {
                         // Store the uploaded file temporarily for preview and sending
-                        console.log("Received primary image upload:", file.name);
-                        if (inputImagePreview) {
-                            inputImagePreview.src = result; // Show preview
-                        }
-                        inputImagePreviewContainer?.classList.remove('hidden');
+                            console.log("Received primary image upload:", file.name);
+                            if (inputImagePreview) {
+                                inputImagePreview.src = result; // Show preview
+                            }
+                            inputImagePreviewContainer?.classList.remove('hidden');
                         selectedFile = { name: file.name, dataUrl: result }; // Store file data for send
 
                         // --- Add user uploaded image to context list HERE ---
                         addImageToContext(result);
 
-                        checkSendButtonState(); // Update send button state
+                            checkSendButtonState(); // Update send button state
                     }
                 }
                 reader.readAsDataURL(file);
@@ -356,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return wrapper;
     }
 
-    // --- Scroll to Bottom Utility ---
+     // --- Scroll to Bottom Utility ---
     function scrollToBottom() {
         requestAnimationFrame(() => {
             if (messageList) {
@@ -453,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Close button listener for the right panel
         if (closePreviewButton) {
-             closePreviewButton.addEventListener('click', hidePreview);
+        closePreviewButton.addEventListener('click', hidePreview);
         }
 
     } else {
@@ -674,5 +775,236 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error("🔴 'New Chat' button (id='newChatButton') or other essential elements NOT FOUND!");
     }
+
+    // === Settings Modal Logic ===
+    if (settingsButton && settingsModalOverlay) {
+        console.log("✅ Settings button and modal overlay FOUND...");
+
+        settingsButton.addEventListener('click', () => {
+            console.log("Settings button clicked - showing modal");
+            settingsModalOverlay.classList.remove('hidden'); // Make sure it's not display: none
+            settingsModalOverlay.classList.add('open');     // Trigger the open animation/styles
+        });
+
+        if (closeSettingsModalButton) {
+            closeSettingsModalButton.addEventListener('click', () => {
+                console.log("Settings modal CLOSE button clicked");
+                settingsModalOverlay.classList.remove('open');
+                // Optional: Add hidden back if needed, depends on CSS transitions
+                // settingsModalOverlay.classList.add('hidden');
+            });
+        } else {
+            console.error("🔴 Settings modal CLOSE button (id='closeSettingsModal') NOT FOUND!");
+        }
+
+        // Close modal if clicking on the overlay background
+        settingsModalOverlay.addEventListener('click', (event) => {
+            if (event.target === settingsModalOverlay) { // Only trigger if the click is directly on the overlay
+                 console.log("Settings modal OVERLAY clicked - closing modal");
+                settingsModalOverlay.classList.remove('open');
+                // Optional: Add hidden back
+                // settingsModalOverlay.classList.add('hidden');
+            }
+        });
+
+        // === Language Selection Logic ===
+        const languageOptionsContainer = settingsModalOverlay.querySelector('.settings-options');
+        if (languageOptionsContainer) {
+            languageOptionsContainer.addEventListener('click', (event) => {
+                const target = event.target as HTMLElement;
+                const langButton = target.closest('.language-option') as HTMLButtonElement | null;
+
+                if (langButton) {
+                    const newLang = langButton.dataset.lang;
+                    if (newLang && translations[newLang]) {
+                        updateUIText(newLang);
+                        // Optional: Highlight active button
+                        languageOptionsContainer.querySelectorAll('.language-option').forEach(btn => btn.classList.remove('active')); // You'll need to define .active CSS
+                        langButton.classList.add('active');
+                        // Maybe close the modal after selection?
+                        // settingsModalOverlay.classList.remove('open');
+                    } else {
+                        console.warn(`Invalid or unsupported language selected: ${newLang}`);
+                    }
+                }
+            });
+        } else {
+            console.error("🔴 Language options container (.settings-options) NOT FOUND!");
+        }
+        // === End Language Selection Logic ===
+
+    } else {
+        if (!settingsButton) console.error("🔴 Settings button (id='settingsButton') NOT FOUND!");
+        if (!settingsModalOverlay) console.error("🔴 Settings modal overlay (id='settingsModalOverlay') NOT FOUND!");
+    }
+    // === End Settings Modal Logic ===
+
+    // --- Function to Update UI based on Language ---
+    function updateUIText(lang: string) {
+        const langPack = translations[lang] || translations['en']; // Fallback to English
+        console.log(`🔄 Updating UI text to: ${lang}`);
+        currentLanguage = lang; // Set current language *first*
+
+        // Update elements using their IDs or specific selectors
+        const settingsBtn = document.getElementById('settingsButton');
+        if (settingsBtn) settingsBtn.setAttribute('aria-label', langPack.settingsAriaLabel);
+
+        const newChatBtn = document.getElementById('newChatButton');
+        if (newChatBtn) newChatBtn.setAttribute('aria-label', langPack.newChatAriaLabel);
+
+        const settingsModalTitle = settingsModalOverlay?.querySelector('h2');
+        if (settingsModalTitle) settingsModalTitle.textContent = langPack.settingsTitle;
+
+        const settingsLangLabel = settingsModalOverlay?.querySelector('.settings-label');
+        if (settingsLangLabel) settingsLangLabel.textContent = langPack.languageLabel;
+
+        const messageInput = document.getElementById('messageTextarea') as HTMLTextAreaElement | null;
+        if (messageInput) messageInput.placeholder = langPack.inputPlaceholder;
+
+        const uploadBtn = document.getElementById('attachFileButton');
+        if (uploadBtn) uploadBtn.textContent = langPack.uploadButton; // Simple text replacement
+
+        const howToUseBtn = document.getElementById('howToUseButton');
+         if (howToUseBtn) {
+             // Find the text node directly within the button to avoid replacing the SVG
+             const textNode = Array.from(howToUseBtn.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+             if (textNode) {
+                 textNode.textContent = ` ${langPack.howToUseButton}`; // Keep leading space
+             } else {
+                 // Fallback if structure changes - might overwrite SVG!
+                 // howToUseBtn.textContent = langPack.howToUseButton;
+                 console.warn("Could not find text node in 'How to Use' button for translation.");
+             }
+        }
+
+
+        const sendBtn = document.getElementById('sendButton');
+        if (sendBtn) sendBtn.setAttribute('aria-label', langPack.sendAriaLabel);
+
+        // Update Quality Dropdown Button Text (Handle prefix)
+        const qualityBtnLabel = document.getElementById('qualityDropdownLabel');
+        if (qualityBtnLabel && qualityBtnLabel.textContent) {
+            const currentQualityValue = qualityBtnLabel.textContent.split(': ')[1] || 'Auto'; // Get current value like "Auto"
+             // Only update if the label starts with a known prefix (prevents re-translation on quality change)
+             const knownPrefix = translations['en'].qualityLabelPrefix; // Use English as reference
+             if (qualityBtnLabel.textContent.startsWith(knownPrefix)) {
+                 qualityBtnLabel.textContent = `${langPack.qualityLabelPrefix}${currentQualityValue}`;
+             } else {
+                // If it doesn't start with the expected prefix, it might already be translated.
+                // We could try finding the *value* part and re-prefixing, but it gets complex.
+                // For now, let's assume it gets updated correctly when quality changes later.
+                console.log("Quality label doesn't start with expected prefix, skipping re-translation for now.");
+             }
+        }
+
+
+        // Update How To Use Modal Title
+        const howToUseModalTitle = howToUseModalOverlay?.querySelector('h2');
+        if (howToUseModalTitle) howToUseModalTitle.textContent = langPack.howToUseTitle;
+
+        // === Update How to Use Modal Content ===
+        const howToUseContent = document.getElementById('howToUseModalContent');
+        if (howToUseContent) {
+            const introP = howToUseContent.querySelector('p');
+            if (introP) introP.textContent = langPack.howToUse_intro;
+
+            const listItems = howToUseContent.querySelectorAll('ul li');
+            if (listItems.length >= 9) { // Check if we found enough list items
+                listItems[0].innerHTML = langPack.howToUse_prompt_li;
+                listItems[1].innerHTML = langPack.howToUse_upload_li;
+                listItems[2].innerHTML = langPack.howToUse_context_li;
+                listItems[3].innerHTML = langPack.howToUse_quality_li;
+                listItems[4].innerHTML = langPack.howToUse_model_li;
+                listItems[5].innerHTML = langPack.howToUse_send_li;
+                listItems[6].innerHTML = langPack.howToUse_preview_li;
+                listItems[7].innerHTML = langPack.howToUse_download_li;
+                listItems[8].innerHTML = langPack.howToUse_newChat_li;
+            } else {
+                console.warn("Could not find all expected list items in 'How to Use' modal for translation.");
+            }
+        }
+        // ======================================
+
+        // === NEW Element Updates ===
+
+        // Image Context Counter Tooltip
+        const imgContextCounter = document.getElementById('imageContextCounter');
+        if (imgContextCounter) imgContextCounter.title = langPack.imageContextTooltip;
+
+        // Image Preview Header Buttons (Aria Labels)
+        const previewHeader = document.querySelector('.preview-header');
+        if (previewHeader) {
+            const downloadBtn = previewHeader.querySelector('button[aria-label*="Download"]'); // Find based on partial label
+            if (downloadBtn) downloadBtn.setAttribute('aria-label', langPack.previewDownloadAriaLabel);
+
+            const closeBtn = previewHeader.querySelector('#closePreviewButton'); // Use ID if available
+            if (closeBtn) closeBtn.setAttribute('aria-label', langPack.previewCloseAriaLabel);
+        }
+
+        // --- Update Existing AI Message Elements ---
+        // This will only affect messages already on the screen when language changes.
+        // New messages will be created with the language active *at that time*.
+        // A better approach involves translating during message creation.
+        const existingAiMessages = messageList?.querySelectorAll('.message-wrapper.ai-message');
+        if (existingAiMessages) {
+            existingAiMessages.forEach(msg => {
+                const subInfoSpan = msg.querySelector('.message-sub-info span');
+                if (subInfoSpan) subInfoSpan.textContent = langPack.aiMessageSubInfo;
+
+                const downloadBtn = msg.querySelector('.message-download-button');
+                if (downloadBtn) {
+                    // Update aria-label
+                    downloadBtn.setAttribute('aria-label', langPack.aiMessageDownloadBtn);
+                    // Update text content (find text node carefully)
+                    const textNode = Array.from(downloadBtn.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+                    if (textNode) {
+                         textNode.textContent = ` ${langPack.aiMessageDownloadBtn}`; // Keep space
+                    } else {
+                        // Fallback - might replace SVG!
+                        // downloadBtn.textContent = langPack.aiMessageDownloadBtn;
+                        console.warn("Could not find text node in AI message download button.");
+                    }
+                }
+            });
+        }
+        // ============================
+
+        // === Update Preview Footer Buttons (REVISED) ===
+        const previewActionsFooter = document.querySelector('.preview-actions');
+        if (previewActionsFooter) {
+            // --- Helper to update button text safely ---
+            const updateButtonText = (actionName: string, translationKey: string) => {
+                // Select using the data-action attribute
+                const btn = previewActionsFooter.querySelector(`button[data-action="${actionName}"]`) as HTMLButtonElement | null;
+                if (btn) {
+                    const textNode = Array.from(btn.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+                    if (textNode) {
+                        textNode.textContent = ` ${langPack[translationKey]}`; // Add space before text
+                    } else {
+                        console.warn(`Could not find text node for button with data-action: ${actionName}`);
+                    }
+                } else {
+                     console.warn(`Could not find button with data-action: ${actionName}`);
+                }
+            };
+
+            // Call the helper using the data-action values
+            updateButtonText('fix-tint', 'previewAction_fixTint');
+            updateButtonText('upscale', 'previewAction_upscale');
+            updateButtonText('create-video', 'previewAction_createVideo');
+        }
+        // ========================================
+
+        // === Call updateImageContextUI explicitly with the new langPack ===
+        updateImageContextUI(langPack); // Pass the determined language pack
+        // ===================================================================
+    }
+    // ============================================
+
+    // === Initial UI Setup ===
+    updateImageContextUI();
+    if (messageTextarea) adjustTextareaHeight();
+    updateUIText(currentLanguage); // Set initial text based on default language
+    // ========================
 
 }); // End DOMContentLoaded

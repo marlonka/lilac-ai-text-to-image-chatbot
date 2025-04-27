@@ -10,6 +10,8 @@ The user wants to develop a functional chatbot application based on an existing 
 
 The user also wants to add a "How to use" button to the application interface to provide guidance to users. Additionally, the browser console shows persistent WebSocket connection errors during development, which need investigation and resolution. Fixing the underlying connection errors is prioritized to ensure a stable development environment.
 
+**Addendum (July 27, 2024):** The user wants to add a settings menu, accessible via a gear icon in the top-right header. The goal for this menu is to allow the user to switch the UI language between English and German, **including translating the visible UI text elements**.
+
 ## Key Challenges and Analysis
 
 1.  **API Key Security:** The OpenAI API key is confidential and must *not* be exposed in the frontend code (`index.tsx`). A backend server acting as a proxy is **essential** to protect the key.
@@ -29,6 +31,12 @@ The user also wants to add a "How to use" button to the application interface to
     *   This strongly suggests the errors are related to Vite's Hot Module Replacement (HMR) client trying to establish a WebSocket connection with the dev server and failing.
     *   This might be due to network configuration, proxy issues, or the dev server itself having problems with its HMR WebSocket. It's less likely related to the application's own backend (`server/src/server.ts`), which currently only seems to expose HTTP endpoints.
     *   These errors don't necessarily break the main application functionality (like image generation via HTTP) but can be annoying and might indicate HMR isn't working correctly (changes might require manual page reloads).
+10. **Internationalization (i18n):**
+    *   **State Management:** Need to store the currently selected language (e.g., 'en', 'de') in the frontend state.
+    *   **Text Abstraction:** Hardcoded text strings throughout `index.html` and `index.tsx` must be replaced with lookups.
+    *   **Translation Storage:** Need a simple mechanism to store translations (e.g., a TypeScript object/map).
+    *   **UI Update:** Need a function to update all relevant text elements when the language changes.
+    *   **Scope:** Requires careful identification of all user-facing strings (static HTML, dynamic JS content, placeholders, button labels, modal titles, etc.).
 
 ## High-level Task Breakdown
 
@@ -151,6 +159,36 @@ The user also wants to add a "How to use" button to the application interface to
     *   Action: Define simple "How to use" instructions (e.g., "1. Type a prompt describing the image you want. 2. Select quality and model. 3. Click send. 4. Optionally upload an image for context-based editing."). Add this text content inside the `HowToUseModal` component.
     *   Success Criteria: The modal displays the defined instructional text when opened.
 
+**Phase 3: Settings & Language Implementation (Revised for Translation)**
+
+1.  **Task:** Add Settings Gear Button (UI)
+    *   Action: Add a `<button>` element with a gear icon SVG to the `.chat-header` div in `index.html`. Style it similarly to the "New Chat" button (`btn-icon-header`). Ensure correct positioning (likely top-right). Give it `id="settingsButton"`.
+    *   Success Criteria: Gear icon button appears correctly in the top-right of the chat header.
+2.  **Task:** Add Settings Modal Structure (HTML/CSS)
+    *   Action: Add HTML for the settings modal overlay (`#settingsModalOverlay`) and content (`#settingsModalContent`) to `index.html`. Style the overlay and content box using CSS. Add a title (`<h2 data-translate-key="settingsTitle">Settings</h2>`) and a close button (`#closeSettingsModal`). Add language buttons: `<button class="lang-button" data-lang="en">English</button>`, `<button class="lang-button" data-lang="de">German</button>`.
+    *   Success Criteria: Basic modal structure exists in HTML. CSS provides overlay/content styling. Modal is hidden. Language buttons are present. Title has a translation key attribute.
+3.  **Task:** Implement Settings Modal Toggle Logic (JS)
+    *   Action: In `index.tsx`, get references to settings button/modal elements. Add click listener to gear button to open modal (`classList.add('open')`, `classList.remove('hidden')`). Add listeners to close button/overlay/Escape key to close modal (`classList.remove('open')`, `classList.add('hidden')`).
+    *   Success Criteria: Clicking gear icon opens settings modal. Closing mechanisms work.
+4.  **Task:** Create Translation Storage & Lookup Function (JS/TS)
+    *   Action: Define `currentLanguage` state variable (default 'en'). Create a translation object `translations = { en: { settingsTitle: "Settings", uploadButton: "Upload Image", ... }, de: { settingsTitle: "Einstellungen", uploadButton: "Bild hochladen", ... } }`. Implement `getText(key)` function that returns `translations[currentLanguage][key]` or the key itself as fallback.
+    *   Success Criteria: `translations` object exists with initial keys. `getText(key)` function works.
+5.  **Task:** Implement UI Text Update Logic (JS)
+    *   Action: Create `updateUIText()` function. Inside, select all elements needing translation (e.g., using `querySelectorAll('[data-translate-key]')` or specific IDs). Iterate and set their `textContent` or relevant attribute (like `placeholder`) using `getText(element.dataset.translateKey)`. Call `updateUIText()` once on load.
+    *   Success Criteria: `updateUIText` function structure exists. Initial call sets default language text (if elements have `data-translate-key`).
+6.  **Task:** Implement Language Selection & Trigger Update (JS)
+    *   Action: Add click listener to language buttons inside the modal (use event delegation on modal content). When clicked, get `data-lang`, update `currentLanguage` state, call `updateUIText()`, add a 'selected' class to the active language button, and close the modal.
+    *   Success Criteria: Clicking language buttons updates `currentLanguage`, calls `updateUIText`, applies visual feedback, and closes modal.
+7.  **Task:** Refactor & Translate Static HTML Text
+    *   Action: Add `data-translate-key="..."` attributes to static elements in `index.html` that need translation (button labels, modal titles, etc.). Add corresponding keys and translations (EN/DE) to the `translations` object in `index.tsx`.
+    *   Success Criteria: All relevant static text in HTML has `data-translate-key`. Translations exist. Text updates correctly when language changes.
+8.  **Task:** Refactor & Translate Dynamic JS Text
+    *   Action: Modify functions like `createMessageElement`, `createErrorMessageElement`, `updateImageContextUI`, `sendMessage` (for logs/errors shown to user), etc., to use `getText(key)` for any hardcoded strings being inserted into the DOM. Add necessary keys/translations.
+    *   Success Criteria: Dynamically generated text (like "Image AI generated", error messages, context counter text format) updates correctly when language changes.
+9.  **Task:** Testing
+    *   Action: Thoroughly test switching between English and German. Verify all static and dynamic text updates correctly. Test modals, buttons, error messages.
+    *   Success Criteria: UI consistently displays the selected language across all refactored elements.
+
 ## Project Status Board
 
 *(Tasks updated based on pivot to Context List Flow + Quality Selector)*
@@ -202,6 +240,36 @@ The user also wants to add a "How to use" button to the application interface to
     *   Action: Define simple "How to use" instructions (e.g., "1. Type a prompt describing the image you want. 2. Select quality and model. 3. Click send. 4. Optionally upload an image for context-based editing."). Add this text content inside the `HowToUseModal` component.
     *   Success Criteria: The modal displays the defined instructional text when opened.
 
+**Phase 3: Settings & Language Implementation (Revised for Translation)**
+
+1.  **Task:** Add Settings Gear Button (UI)
+    *   Action: Add a `<button>` element with a gear icon SVG to the `.chat-header` div in `index.html`. Style it similarly to the "New Chat" button (`btn-icon-header`). Ensure correct positioning (likely top-right). Give it `id="settingsButton"`.
+    *   Success Criteria: Gear icon button appears correctly in the top-right of the chat header.
+2.  **Task:** Add Settings Modal Structure (HTML/CSS)
+    *   Action: Add HTML for the settings modal overlay (`#settingsModalOverlay`) and content (`#settingsModalContent`) to `index.html`. Style the overlay and content box using CSS. Add a title (`<h2 data-translate-key="settingsTitle">Settings</h2>`) and a close button (`#closeSettingsModal`). Add language buttons: `<button class="lang-button" data-lang="en">English</button>`, `<button class="lang-button" data-lang="de">German</button>`.
+    *   Success Criteria: Basic modal structure exists in HTML. CSS provides overlay/content styling. Modal is hidden. Language buttons are present. Title has a translation key attribute.
+3.  **Task:** Implement Settings Modal Toggle Logic (JS)
+    *   Action: In `index.tsx`, get references to settings button/modal elements. Add click listener to gear button to open modal (`classList.add('open')`, `classList.remove('hidden')`). Add listeners to close button/overlay/Escape key to close modal (`classList.remove('open')`, `classList.add('hidden')`).
+    *   Success Criteria: Clicking gear icon opens settings modal. Closing mechanisms work.
+4.  **Task:** Create Translation Storage & Lookup Function (JS/TS)
+    *   Action: Define `currentLanguage` state variable (default 'en'). Create a translation object `translations = { en: { settingsTitle: "Settings", uploadButton: "Upload Image", ... }, de: { settingsTitle: "Einstellungen", uploadButton: "Bild hochladen", ... } }`. Implement `getText(key)` function that returns `translations[currentLanguage][key]` or the key itself as fallback.
+    *   Success Criteria: `translations` object exists with initial keys. `getText(key)` function works.
+5.  **Task:** Implement UI Text Update Logic (JS)
+    *   Action: Create `updateUIText()` function. Inside, select all elements needing translation (e.g., using `querySelectorAll('[data-translate-key]')` or specific IDs). Iterate and set their `textContent` or relevant attribute (like `placeholder`) using `getText(element.dataset.translateKey)`. Call `updateUIText()` once on load.
+    *   Success Criteria: `updateUIText` function structure exists. Initial call sets default language text (if elements have `data-translate-key`).
+6.  **Task:** Implement Language Selection & Trigger Update (JS)
+    *   Action: Add click listener to language buttons inside the modal (use event delegation on modal content). When clicked, get `data-lang`, update `currentLanguage` state, call `updateUIText()`, add a 'selected' class to the active language button, and close the modal.
+    *   Success Criteria: Clicking language buttons updates `currentLanguage`, calls `updateUIText`, applies visual feedback, and closes modal.
+7.  **Task:** Refactor & Translate Static HTML Text
+    *   Action: Add `data-translate-key="..."` attributes to static elements in `index.html` that need translation (button labels, modal titles, etc.). Add corresponding keys and translations (EN/DE) to the `translations` object in `index.tsx`.
+    *   Success Criteria: All relevant static text in HTML has `data-translate-key`. Translations exist. Text updates correctly when language changes.
+8.  **Task:** Refactor & Translate Dynamic JS Text
+    *   Action: Modify functions like `createMessageElement`, `createErrorMessageElement`, `updateImageContextUI`, `sendMessage` (for logs/errors shown to user), etc., to use `getText(key)` for any hardcoded strings being inserted into the DOM. Add necessary keys/translations.
+    *   Success Criteria: Dynamically generated text (like "Image AI generated", error messages, context counter text format) updates correctly when language changes.
+9.  **Task:** Testing
+    *   Action: Thoroughly test switching between English and German. Verify all static and dynamic text updates correctly. Test modals, buttons, error messages.
+    *   Success Criteria: UI consistently displays the selected language across all refactored elements.
+
 ## Current Status / Progress Tracking
 
 *   Backend server differentiates generate/edit calls based on image context.
@@ -229,3 +297,4 @@ The user also wants to add a "How to use" button to the application interface to
 *   The `openai` Node.js library's `images.edit` endpoint requires the image data to be passed as a `File`-like object. This can be created from a `Buffer` derived from a base64 data URL using `new File([buffer], filename, { type: mimeType })`. Remember to parse the mime type from the data URL.
 *   **Confirmed (via July 2024 docs):** The `openai.images.edit` API endpoint accepts an *array* for the `image` parameter (`image: [file1, file2, ...]`) to support multi-image composition/reference with `gpt-image-1`, not just single-image edits.
 *   **Requirement Pivot:** Changed multi-image handling from specific action buttons ("Add a logo") to a persistent image context list (like ChatGPT), simplifying UI and aligning better with API capabilities.
+*   DOM manipulation requires elements to exist *and* have the correct identifiers (`id`) for `getElementById` to function. Check HTML structure and attributes carefully.

@@ -82,7 +82,11 @@ body { min-height: 100vh; overflow: hidden; }
 .input-textarea::placeholder { color: var(--neutral-500); }
 .input-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 0.25rem 0.25rem 0.25rem; }
 .controls-left, .controls-right { display: flex; align-items: center; gap: 0.5rem; }
-.controls-right { gap: 0.5rem; }
+.controls-right {
+  gap: 0.5rem;
+  /* Ensure items align nicely */
+  align-items: center;
+}
 
 /* Model Indicator - Styled like feature pill */
 .model-indicator {
@@ -155,7 +159,23 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .btn-icon-input.send { background-color: var(--neutral-700); color: white; }
 .btn-icon-input:hover:not(:disabled) { background-color: var(--neutral-600); }
 .btn-text-input { height: 2rem; padding: 0 1rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; gap: 0.375rem; color: var(--neutral-400); }
-.btn-text-input.how-to-use:hover { background-color: var(--neutral-700); color: var(--neutral-200); }
+.btn-text-input.how-to-use {
+  color: var(--neutral-400); /* Existing color */
+  gap: 0.375rem; /* Match existing gap */
+  padding: 0 0.75rem; /* Adjust padding if needed */
+  height: 2rem; /* Match other input buttons */
+  border-radius: 9999px; /* Pill shape */
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.btn-text-input.how-to-use:hover {
+  background-color: var(--neutral-800); /* Subtle background on hover */
+  color: var(--neutral-200);
+}
+.btn-text-input.how-to-use .icon {
+    width: 0.875rem; /* size-3_5 */
+    height: 0.875rem; /* size-3_5 */
+}
 .btn-action-pill { height: 2.5rem; padding: 0 1rem; border-radius: 9999px; background-color: var(--lilac-action-bg); color: var(--lilac-200); font-size: 0.875rem; font-weight: 500; }
 .btn-action-pill:hover { background-color: var(--lilac-action-hover-bg); }
 .btn-meta { font-weight: 600; color: var(--neutral-500); }
@@ -256,6 +276,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
     justify-content: space-between; /* Push label and arrow apart */
     height: 2rem;
     padding: 0 0.75rem;
+    padding-right: 0.125rem; /* <<< EVEN TIGHTER right padding (e.g., 2px) */
     border-radius: 9999px;
     border: 1px solid var(--lilac-indicator-border);
     background-color: var(--lilac-indicator-bg); /* Use the standard pill background */
@@ -266,7 +287,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
     transition: all 0.15s ease;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     white-space: nowrap;
-    min-width: 110px; /* Give it a minimum width */
+    min-width: auto; /* Allow button to shrink more naturally */
     text-align: left; /* Ensure text aligns left */
     appearance: none; /* Remove default button appearance */
     -webkit-appearance: none;
@@ -283,7 +304,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 
 /* Style the arrow icon inside the button */
 .custom-dropdown-toggle .dropdown-arrow {
-    margin-left: 0.5rem;
+    margin-left: 0.125rem; /* <<< EVEN TIGHTER arrow margin (e.g., 2px) */
     color: var(--lilac-300); /* Match button text color */
     transition: transform 0.2s ease-in-out;
     flex-shrink: 0;
@@ -375,5 +396,133 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .select-arrow {
     /* Remove this rule */
 }
+
+/* ... rest of existing styles ... */
+
+#qualitySelectorButton {
+  /* ... existing styles ... */
+  /* Adjust padding: Reduce right padding */
+  padding: 8px 12px 8px 16px; /* Assuming original was symmetrical like 16px or 16px 20px */
+  /* OR adjust specific right padding if it exists */
+  /* padding-right: 12px; */ /* Example value, adjust as needed */
+  white-space: nowrap; /* Ensure text doesn't wrap, influencing width */
+  /* ... existing styles ... */
+}
+
+/* ... existing code ... */
+
+/* Might also need to adjust icon padding if it's separate */
+#qualitySelectorButton .icon {
+  /* If the icon has specific margin/padding causing the gap */
+  /* margin-left: 4px; */ /* Example adjustment */
+  /* ... existing styles ... */
+}
+
+/* ... existing code ... */
+
+/* --- How To Use Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0; /* Cover entire viewport (top, right, bottom, left = 0) */
+    background-color: var(--bg-overlay); /* Use existing overlay color */
+    display: flex; /* Use flexbox to center content */
+    align-items: center;
+    justify-content: center;
+    z-index: 50; /* Ensure it's above other content */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    /* Inherit glassmorphism base */
+    /* Use lilac glass background */
+    background-color: rgba(46, 16, 101, 0.6); /* Lilac 950 base, higher alpha */
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--lilac-800-border);
+    /* Sizing and Padding */
+    width: 90%;
+    max-width: 600px; /* Limit max width */
+    max-height: 80vh; /* Limit max height */
+    overflow-y: auto; /* Allow scrolling if content is too long */
+    padding: 1.5rem 2rem 2rem 2rem; /* Generous padding */
+    position: relative; /* For positioning the close button */
+    color: var(--neutral-100); /* Ensure text is light */
+    /* Add transition for smoother appearance */
+    transform: scale(0.95);
+    transition: transform 0.2s ease-in-out;
+}
+
+.modal-overlay.open .modal-content {
+     transform: scale(1);
+}
+
+
+.modal-content h2 {
+    color: var(--lilac-200);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.modal-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: var(--neutral-200);
+}
+
+.modal-content ul {
+    list-style: none; /* Remove default bullets */
+    padding-left: 0;
+    margin-bottom: 1rem;
+}
+
+.modal-content li {
+    margin-bottom: 0.75rem;
+    padding-left: 1.25rem; /* Indent list items */
+    position: relative;
+    line-height: 1.6;
+    color: var(--neutral-200);
+}
+
+/* Custom bullet using pseudo-element */
+.modal-content li::before {
+    content: '•'; /* Bullet character */
+    color: var(--lilac-300); /* Lilac bullet color */
+    font-weight: bold;
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    top: 0; /* Adjust vertical alignment if needed */
+}
+
+ .modal-content li strong {
+     color: var(--lilac-200); /* Highlight key terms */
+     font-weight: 600;
+ }
+
+
+.modal-close-button {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    /* Reuse header button style or create specific */
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.2);
+    color: var(--neutral-300);
+}
+
+.modal-close-button:hover {
+    background-color: rgba(0,0,0,0.4);
+    color: white;
+}
+
+/* --- End How To Use Modal Styles --- */
 
 /* ... rest of existing styles ... */

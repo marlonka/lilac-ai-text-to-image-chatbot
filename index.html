@@ -4,10 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image AI Chat UI - Final</title>
-    <link rel="stylesheet" href="style.css">
+
+    <!-- Link to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- === Link to YOUR CSS Stylesheet === -->
+    <!-- Make sure the filename 'index.css' is correct and the file -->
+    <!-- is in the same directory as this index.html file. -->
+    <link rel="stylesheet" href="index.css">
+
+    <!-- Remove this line if style.css is not used or empty -->
+    <!-- <link rel="stylesheet" href="style.css"> -->
+
 </head>
 <body>
     <!-- SVG Icon Definitions -->
@@ -33,7 +43,7 @@
     <div class="app-container">
         <section class="chat-column">
             <header class="chat-header glassmorphism-container">
-                <button class="btn-icon-header" aria-label="Start new chat">
+                <button id="newChatButton" class="btn-icon-header" aria-label="Start new chat">
                     <svg class="icon size-4"><use xlink:href="#icon-new-page"></use></svg>
                 </button>
             </header>
@@ -88,7 +98,7 @@
                             <span class="model-indicator">gpt-image-1</span>
                         </div>
                         <div class="controls-right">
-                            <button class="btn-text-input how-to-use">
+                            <button id="howToUseButton" class="btn-text-input how-to-use">
                                 <svg class="icon size-3_5"><use xlink:href="#icon-comment"></use></svg> How to use
                             </button>
                             <button class="btn-icon-input send" disabled aria-label="Send message" id="sendButton">
@@ -126,7 +136,32 @@
         </aside>
     </div>
 
-    <script src="script.js"></script>
+    <script src="index.tsx" type="module"></script>
+
+    <!-- === How To Use Modal START === -->
+    <div id="howToUseModalOverlay" class="modal-overlay hidden">
+        <div id="howToUseModalContent" class="modal-content glassmorphism-container">
+            <button id="closeHowToUseModal" class="modal-close-button" aria-label="Close how to use instructions">
+                <svg class="icon size-4"><use xlink:href="#icon-cross-medium"></use></svg>
+            </button>
+            <h2>How to Use</h2>
+            <p>
+                Here's a quick guide to generating images:
+            </p>
+            <ul>
+                <li><strong>Prompt:</strong> Type what you want to see in the text box. Be descriptive!</li>
+                <li><strong>Upload (Optional):</strong> Click "Upload Image" to provide context for editing or inspiration. The uploaded image will appear above the text box and be added to the context list.</li>
+                <li><strong>Context:</strong> The number next to "Upload Image" shows how many images (uploaded or previously generated) will be sent with your next prompt (max 10). Click this number pill to clear the context.</li>
+                <li><strong>Quality:</strong> Select the desired image quality (Low, Medium, High, or Auto). Lower quality is faster.</li>
+                <li><strong>Model:</strong> Shows the AI model being used (currently gpt-image-1).</li>
+                <li><strong>Send:</strong> Click the paper plane button or press Enter to generate your image.</li>
+                <li><strong>Preview:</strong> Click any generated image thumbnail in the chat to see a larger version on the right.</li>
+                <li><strong>Download:</strong> Click the "Download image" button below a generated image, or the download icon in the preview panel.</li>
+                <li><strong>New Chat:</strong> Click the "+" button in the top-left corner to clear the chat, context, and input.</li>
+            </ul>
+        </div>
+    </div>
+    <!-- === How To Use Modal END === -->
+
 </body>
-</html><link rel="stylesheet" href="index.css">
-<script src="index.tsx" type="module"></script>
+</html>

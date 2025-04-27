@@ -18,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const qualityDropdownButton = document.getElementById('qualityDropdownButton') as HTMLButtonElement | null;
     const qualityDropdownLabel = document.getElementById('qualityDropdownLabel') as HTMLSpanElement | null;
     const qualityDropdownOptions = document.getElementById('qualityDropdownOptions') as HTMLDivElement | null;
+    const inputControls = document.getElementById('inputControls');
+    const controlsLeft = document.getElementById('controlsLeft');
+    const controlsRight = document.getElementById('controlsRight');
+    const howToUseButton = document.getElementById('howToUseButton');
+    const newChatButton = document.getElementById('newChatButton');
+
+    // Add references for modal elements
+    const howToUseModalOverlay = document.getElementById('howToUseModalOverlay');
+    const closeHowToUseModalButton = document.getElementById('closeHowToUseModal');
 
     // Type definition for the file object we store (for user upload preview)
     interface SelectedFile {
@@ -569,6 +578,101 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } else {
         console.warn("Custom quality dropdown elements not found, cannot attach listeners.");
+    }
+
+    // --- Event Listener for How To Use Button (MODIFIED) ---
+    if (howToUseButton && howToUseModalOverlay) { // Check for modal overlay too
+        console.log("✅ 'How to use' button FOUND in the DOM.");
+        howToUseButton.addEventListener('click', () => {
+            console.log('How to use button clicked - showing modal');
+            howToUseModalOverlay.classList.add('open'); // Show the modal
+            howToUseModalOverlay.classList.remove('hidden'); // REMOVE the hidden class
+        });
+    } else {
+        console.error("🔴 'How to use' button (id='howToUseButton') or its modal overlay NOT FOUND!");
+    }
+
+    // --- Listener to Close the Modal ---
+    function closeModal() {
+        if (howToUseModalOverlay) {
+            howToUseModalOverlay.classList.remove('open');
+            howToUseModalOverlay.classList.add('hidden'); // Add hidden back when closing
+            console.log('Modal closed');
+        }
+    }
+
+    // Close via the 'X' button
+    if (closeHowToUseModalButton) {
+        closeHowToUseModalButton.addEventListener('click', closeModal);
+    }
+
+    // Close by clicking the overlay background
+    if (howToUseModalOverlay) {
+        howToUseModalOverlay.addEventListener('click', (event) => {
+            // Only close if the click is directly on the overlay, not the content inside
+            if (event.target === howToUseModalOverlay) {
+                closeModal();
+            }
+        });
+    }
+
+    // Close via Escape key (Add this listener if not already present for quality dropdown)
+    // Check if an Escape listener already exists to avoid duplicates
+    let escapeListenerExists = false; // You might need a better way to track this if complex
+    if (!escapeListenerExists) {
+         document.addEventListener('keydown', (event) => {
+             if (event.key === 'Escape') {
+                // Close quality dropdown if open
+                if (customQualityDropdown && customQualityDropdown.classList.contains('open')) {
+                    customQualityDropdown.classList.remove('open');
+                    if (qualityDropdownButton) qualityDropdownButton.setAttribute('aria-expanded', 'false');
+                }
+                // Close HowToUse modal if open
+                if (howToUseModalOverlay && howToUseModalOverlay.classList.contains('open')) {
+                    closeModal();
+                }
+             }
+        });
+        escapeListenerExists = true;
+    }
+
+    // --- Event Listener for New Chat / Reset Button ---
+    if (newChatButton && messageList && messageTextarea /* && other needed elements/functions */ ) {
+        console.log("✅ 'New Chat' button FOUND in the DOM.");
+        newChatButton.addEventListener('click', () => {
+            console.log("🔄 Resetting chat and context...");
+
+            // 1. Clear Image Context
+            imageContextList.length = 0;
+            updateImageContextUI(); // Update the counter pill
+
+            // 2. Clear Input Area Preview
+            clearInputPreview(); // Use existing helper
+
+            // 3. Clear Text Area
+            messageTextarea.value = '';
+            adjustTextareaHeight(); // Reset height
+
+            // 4. Clear Chat Messages (Carefully, keep loading indicator if it's a child)
+            // Remove all children EXCEPT the loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            while (messageList.firstChild && messageList.firstChild !== loadingIndicator) {
+                messageList.removeChild(messageList.firstChild);
+            }
+            // OR if loading indicator is NOT a child: messageList.innerHTML = '';
+
+            // 5. Hide Image Preview Panel
+            // Make sure hidePreview is defined or accessible here
+            // hidePreview(); // Assuming hidePreview function exists and works
+
+            // 6. Update Send Button State
+            checkSendButtonState();
+
+            console.log("✅ Chat reset complete.");
+            // Maybe add a subtle visual confirmation if desired
+        });
+    } else {
+        console.error("🔴 'New Chat' button (id='newChatButton') or other essential elements NOT FOUND!");
     }
 
 }); // End DOMContentLoaded

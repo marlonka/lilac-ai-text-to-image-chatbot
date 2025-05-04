@@ -557,3 +557,35 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
     font-weight: 600;
 }
 /* === End Settings Modal Specific Styles === */
+
+/* --- Custom Dropdowns (General) --- */
+/* ... existing .custom-dropdown styles ... */
+
+
+/* --- SPECIFIC: Model Selector Dropdown --- */
+.model-selector-dropdown .btn-input-pill { 
+    /* Inherits general btn-input-pill styles */
+    justify-content: space-between; /* Keep label left, chevron right */
+    padding-right: 0.125rem;       /* <<< ADD THIS: Reduce right padding like quality selector */
+    /* Adjust padding left slightly if needed to compensate visually */
+    /* padding-left: 0.65rem; */ /* Optional */
+}
+
+.model-selector-dropdown .custom-dropdown-options {
+    /* Inherits general options styles */
+    min-width: 200px; /* Wider options if needed */
+    /* Position slightly differently if needed */
+}
+
+/* Style for the detail text within an option */
+.custom-dropdown-option .option-detail {
+    font-size: 0.75em; /* Smaller text */
+    color: var(--text-secondary); /* Muted color */
+    margin-left: 0.5em;
+    display: block; /* Put on new line */
+    margin-top: 2px;
+}
+
+
+/* --- Input Controls Responsiveness --- */
+/* ... existing responsive styles ... */

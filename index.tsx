@@ -34,6 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettingsModalButton = document.getElementById('closeSettingsModal');
     // ===================================
 
+    // === Add Model Selector Elements ===
+    const customModelDropdown = document.getElementById('customModelDropdown') as HTMLDivElement | null;
+    const modelDropdownButton = document.getElementById('modelDropdownButton') as HTMLButtonElement | null;
+    const modelDropdownLabel = document.getElementById('modelDropdownLabel') as HTMLSpanElement | null;
+    const modelDropdownOptions = document.getElementById('modelDropdownOptions') as HTMLDivElement | null;
+    // ===================================
+
     // Type definition for the file object we store (for user upload preview)
     interface SelectedFile {
         name: string;
@@ -48,6 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     type ImageQuality = 'auto' | 'low' | 'medium' | 'high';
     let selectedQuality: ImageQuality = 'auto'; // Default quality
     let currentLanguage = 'en'; // Default language
+    let currentApiEndpoint = '/api/generate-gemini'; // Default to Gemini
+    let currentModelName = 'gemini-2.0-flash-exp'; // Add state for model ID
+    let currentModelLabel = 'Gemini Flash';      // Add state for display label
+    let modelButtonLabel = 'GPT-image-1'; // <-- Update initial label
+    // =====================================
 
     // --- Translation Store ---
     const translations: { [lang: string]: { [key: string]: string } } = {
@@ -217,164 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
         messageTextarea.style.height = `${newHeight}px`;
     };
 
-    // --- Setup Listeners that USE adjustTextareaHeight ---
-    if (messageTextarea && sendButton) {
-        messageTextarea.addEventListener('input', () => {
-            adjustTextareaHeight();
-            checkSendButtonState();
-        });
-        adjustTextareaHeight(); // Initial check
-    }
-
-    // --- Simplified File Upload Trigger ---
-    if (attachFileButton && fileInput) {
-        attachFileButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-    }
-
-    // --- File Input Handling (ADD image to context here) ---
-    if (fileInput && inputImagePreviewContainer && inputImagePreview && removeInputImagePreview) {
-        fileInput.addEventListener('change', (event: Event) => {
-            const target = event.target as HTMLInputElement;
-            const file = target.files?.[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e: ProgressEvent<FileReader>) => {
-                    const result = e.target?.result as string | null;
-                    if (result) {
-                        // Store the uploaded file temporarily for preview and sending
-                            console.log("Received primary image upload:", file.name);
-                            if (inputImagePreview) {
-                                inputImagePreview.src = result; // Show preview
-                            }
-                            inputImagePreviewContainer?.classList.remove('hidden');
-                        selectedFile = { name: file.name, dataUrl: result }; // Store file data for send
-
-                        // --- Add user uploaded image to context list HERE ---
-                        addImageToContext(result);
-
-                            checkSendButtonState(); // Update send button state
-                    }
-                }
-                reader.readAsDataURL(file);
-            }
-            if (target) target.value = ''; // Reset input
-        });
-
-        removeInputImagePreview.addEventListener('click', () => {
-            // Note: Removing preview doesn't remove from context list automatically.
-            // Context is cleared via the counter button.
-            clearInputPreview();
-            checkSendButtonState();
-        });
-    }
-
-    // --- Send Message Logic Setup ---
-    if (sendButton && messageList && loadingIndicator && messageTextarea) {
-        sendButton.addEventListener('click', sendMessage);
-        messageTextarea.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-    }
-
-    // --- Send Message Function (Add quality to payload) ---
-    async function sendMessage() {
-        if (!messageTextarea || !messageList || !loadingIndicator || !sendButton) return; // Guard clause
-
-        const text = messageTextarea.value.trim();
-        const userUpload = selectedFile;
-
-        if (!text && !userUpload) {
-            console.log("Nothing to send (no text, no *new* user image selected).");
-            return;
-        }
-
-        // 1. Create and display the user's message
-        const userDisplayImageUrl = userUpload ? userUpload.dataUrl : null;
-        const userMsgElement = createMessageElement('user', text, userDisplayImageUrl);
-        messageList.insertBefore(userMsgElement, loadingIndicator);
-
-        // 2. Clear the input field(s) and reset state
-        const currentPrompt = text;
-        const currentContext = [...imageContextList];
-        // --- Get current quality state ---
-        const currentQuality = selectedQuality; // Capture selected quality
-        messageTextarea.value = '';
-        clearInputPreview();
-        messageTextarea.style.height = 'auto';
-        sendButton.disabled = true;
-
-        // 3. Show the loading indicator
-        loadingIndicator.classList.remove('hidden');
-        scrollToBottom();
-
-        // --- 4. Call the backend API ---
-        try {
-            // --- Construct payload including quality ---
-            // Define the type including the optional quality
-            const bodyPayload: {
-                 prompt: string;
-                 imageContextUrls?: string[];
-                 quality?: ImageQuality // Add quality field
-            } = {
-                prompt: currentPrompt,
-                imageContextUrls: currentContext.length > 0 ? currentContext : undefined,
-                quality: currentQuality // Add the captured quality
-            };
-
-            console.log(`🚀 Sending to backend:`, bodyPayload); // Log the full payload including quality
-
-            const response = await fetch('http://localhost:3001/api/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bodyPayload),
-            });
-
-            console.log("📥 Received response status:", response.status);
-
-            if (!response.ok) {
-                let errorMsg = `Error from server: ${response.status} ${response.statusText}`;
-                try { const errorData = await response.json(); if (errorData && errorData.message) { errorMsg = `Error: ${errorData.message}`; } } catch (jsonError) { /* Ignore */ }
-                throw new Error(errorMsg);
-            }
-
-            const responseData = await response.json();
-            console.log("✅ Backend Response Data:", { success: responseData.success, text: responseData.text, imageReceived: !!responseData.image });
-
-            if (responseData.success && responseData.image) {
-                const imageUrl = `data:image/png;base64,${responseData.image}`;
-                const aiText = responseData.text || "Here is the generated image:";
-                const aiMsgElement = createMessageElement('ai', aiText, imageUrl);
-                messageList.insertBefore(aiMsgElement, loadingIndicator);
-                addImageToContext(imageUrl);
-                scrollToBottom();
-            } else {
-                const errorMsg = responseData.message || 'The backend failed to process the request.';
-                console.error("🔴 Backend reported failure:", errorMsg);
-                const errorMsgElement = createErrorMessageElement(`Oops! ${errorMsg}`);
-                messageList.insertBefore(errorMsgElement, loadingIndicator);
-                scrollToBottom();
-            }
-
-        } catch (error) {
-            console.error("🔴 Frontend Error sending message:", error);
-            const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred while contacting the server.';
-            const errorMsgElement = createErrorMessageElement(`Network Error: ${errorMsg}`);
-            messageList.insertBefore(errorMsgElement, loadingIndicator);
-            scrollToBottom();
-
-        } finally {
-            if (loadingIndicator) loadingIndicator.classList.add('hidden');
-            scrollToBottom();
-        }
-    }
-
     // --- Helper Function to Create ERROR Message HTML ---
     function createErrorMessageElement(errorMessage: string): HTMLDivElement {
         const wrapper = document.createElement('div');
@@ -457,7 +311,217 @@ document.addEventListener('DOMContentLoaded', () => {
         return wrapper;
     }
 
-     // --- Scroll to Bottom Utility ---
+    // --- MOVE sendMessage function definition HERE (AFTER helpers) ---
+    const sendMessage = async () => {
+        // === ADD NULL CHECKS AT THE START ===
+        if (!messageTextarea || !sendButton || !loadingIndicator || !messageList) {
+            console.error("sendMessage aborted: Required DOM elements not found.");
+            return;
+        }
+        // =====================================
+
+        const text = messageTextarea.value.trim();
+        const imageContextListToSend = [...imageContextList]; // Use current context
+
+        // Validation and UI setup (loading indicator, etc.)
+        if (!text && imageContextListToSend.length === 0) {
+            console.warn("Attempted to send empty message and no context.");
+            return; // Don't send if both are empty
+        }
+
+        // === Get selected quality ===
+        const selectedQualityElement = document.getElementById('qualitySelectorValue'); 
+        const quality = (selectedQualityElement?.dataset.value as ImageQuality | undefined) || 'auto'; 
+        // ============================
+
+        // Display user message immediately (even if only image context is sent)
+        const userPromptText = text || "(Image context provided)";
+        // === FIX: Add null for imageUrl for user messages ===
+        const userMsgElement = createMessageElement('user', userPromptText, null); // Now defined
+        messageList.insertBefore(userMsgElement, loadingIndicator); // Use messageList directly (checked above)
+
+        // Clear input ONLY if text was entered
+        if (text) {
+            messageTextarea.value = ''; // Use messageTextarea directly (checked above)
+        }
+        // Clear file selection/preview regardless
+        clearInputPreview();
+
+        // Show loading indicator
+        loadingIndicator.classList.remove('hidden'); // Use loadingIndicator directly (checked above)
+        sendButton.disabled = true; // Use sendButton directly (checked above)
+
+        try {
+            const body: any = { 
+                prompt: text,
+                imageContextUrls: imageContextListToSend,
+            };
+            
+            // === Add quality only if targeting the OpenAI endpoint ===
+            if (currentApiEndpoint === '/api/generate') {
+                body.quality = quality;
+                console.log(`   (Including quality: ${quality} for OpenAI)`);
+            } 
+            // =======================================================
+
+            // === Use the state variable for the endpoint ===
+            console.log('✉️ Sending request to backend:', currentApiEndpoint); 
+            console.log('   Payload:', body);
+
+            const response = await fetch(`http://localhost:3001${currentApiEndpoint}`, { // <-- Use state variable
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+            // ==================================================
+
+            loadingIndicator.classList.add('hidden'); // Hide loading on response (checked above)
+            sendButton.disabled = false; // Re-enable send button (checked above)
+
+            if (!response.ok) {
+                // Try to parse error message from backend JSON response
+                let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage; // Use backend message if available
+                    console.error("Backend error response:", errorData);
+                } catch (e) {
+                    console.error("Could not parse error response JSON:", e);
+                }
+                const errorMsgElement = createErrorMessageElement(errorMessage); // Now defined
+                 // Use messageList directly (checked above)
+                messageList.insertBefore(errorMsgElement, loadingIndicator);
+                throw new Error(errorMessage); // Throw to be caught by outer catch if needed
+            }
+
+            const responseData = await response.json();
+            console.log('⬅️ Received response from backend:', responseData);
+
+
+            if (responseData.success) {
+                // Construct data URL IF image data is present
+                const aiImageUrl = responseData.image ? `data:image/png;base64,${responseData.image}` : null;
+                const aiText = responseData.text || "(No text content received)"; // Fallback text
+
+                // Create AI message element
+                const aiMsgElement = createMessageElement('ai', aiText, aiImageUrl); // Now defined
+                 // Use messageList directly (checked above)
+                messageList.insertBefore(aiMsgElement, loadingIndicator);
+
+                // Add the *received* AI image URL to the context list
+                if (aiImageUrl) {
+                    addImageToContext(aiImageUrl); // Use helper function
+                }
+
+            } else {
+                // Handle cases where backend responds with { success: false, message: "..." }
+                console.error("Backend indicated failure:", responseData.message);
+                const errorMsgElement = createErrorMessageElement(responseData.message || 'An unknown error occurred on the backend.'); // Now defined
+                 // Use messageList directly (checked above)
+                messageList.insertBefore(errorMsgElement, loadingIndicator);
+            }
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            // Ensure loading indicator exists before using
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            // Ensure send button exists before using
+            if (sendButton) sendButton.disabled = false;
+            // Display a generic network/fetch error if it wasn't handled above
+            if (error instanceof Error && !(error.message.startsWith('Error: '))) { // Avoid duplicating errors shown above
+                 const errorMsgElement = createErrorMessageElement(`Network or fetch error: ${error.message}`); // Now defined
+                 // Ensure messageList exists before using
+                if (messageList && loadingIndicator) {
+                    messageList.insertBefore(errorMsgElement, loadingIndicator);
+                }
+            }
+        } finally {
+             // Ensure loading indicator exists before using
+            if(loadingIndicator) loadingIndicator.classList.add('hidden');
+             // Ensure send button exists before using
+            if(sendButton) sendButton.disabled = false;
+             scrollToBottom(); // Scroll after message is added or error displayed
+        }
+    };
+    // --- END sendMessage function definition ---
+
+    // --- Setup Listeners that USE adjustTextareaHeight ---
+    if (messageTextarea && sendButton) {
+        messageTextarea.addEventListener('input', () => {
+            adjustTextareaHeight();
+            checkSendButtonState();
+        });
+        adjustTextareaHeight(); // Initial check
+    }
+
+    // --- Send Message Logic Setup ---
+    // This section now correctly comes AFTER sendMessage is defined
+    if (sendButton && messageList && loadingIndicator && messageTextarea) {
+        sendButton.addEventListener('click', sendMessage); // Should work
+        messageTextarea.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(); // Should work
+            }
+        });
+    }
+
+    // --- Simplified File Upload Trigger ---
+    if (attachFileButton && fileInput) {
+        attachFileButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+    }
+
+    // --- File Input Handling (ADD image to context here) ---
+    if (fileInput && inputImagePreviewContainer && inputImagePreview && removeInputImagePreview) {
+        fileInput.addEventListener('change', (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            const file = target.files?.[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e: ProgressEvent<FileReader>) => {
+                    const result = e.target?.result as string | null;
+                    if (result) {
+                        // Store the uploaded file temporarily for preview and sending
+                        console.log("Received primary image upload:", file.name);
+                        if (inputImagePreview) {
+                            inputImagePreview.src = result; // Show preview
+                        }
+                        inputImagePreviewContainer?.classList.remove('hidden');
+                        selectedFile = { name: file.name, dataUrl: result }; // Store file data for send
+
+                        // --- Add user uploaded image to context list HERE ---
+                        addImageToContext(result);
+
+                        // --- ADD USER UPLOADED IMAGE TO CHAT LIST ---
+                        console.log("➕ Displaying user uploaded image in chat list.");
+                        const userUploadMsgElement = createMessageElement('user', null, result); // Create message with image only
+                        if (messageList && loadingIndicator) {
+                             messageList.insertBefore(userUploadMsgElement, loadingIndicator); // Insert before loading indicator
+                             scrollToBottom(); // Scroll down after adding the user image
+                        }
+                        // --- END ADD USER UPLOADED IMAGE ---
+
+                        checkSendButtonState(); // Update send button state
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+            if (target) target.value = ''; // Reset input
+        });
+
+        removeInputImagePreview.addEventListener('click', () => {
+            // Note: Removing preview doesn't remove from context list automatically.
+            // Context is cleared via the counter button.
+            clearInputPreview();
+            checkSendButtonState();
+        });
+    }
+
+    // --- Scroll to Bottom Utility ---
     function scrollToBottom() {
         requestAnimationFrame(() => {
             if (messageList) {
@@ -839,6 +903,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // === End Settings Modal Logic ===
 
+    // === NEW: Custom Model Dropdown Logic ===
+    if (customModelDropdown && modelDropdownButton && modelDropdownLabel && modelDropdownOptions) {
+        console.log("✅ Model selector dropdown elements FOUND.");
+
+        // 1. Set initial button label
+        modelDropdownLabel.textContent = currentModelLabel; // Set from initial state
+
+        // 2. Toggle Dropdown Visibility
+        modelDropdownButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const isOpen = customModelDropdown.classList.toggle('open');
+            modelDropdownButton.setAttribute('aria-expanded', String(isOpen));
+            // Ensure options are visible for transition (CSS handles actual animation/visibility)
+             if (isOpen) {
+                 modelDropdownOptions.classList.remove('hidden');
+             } else {
+                 // Optionally add hidden back after transition if CSS doesn't handle it
+                 // setTimeout(() => { if (!customModelDropdown.classList.contains('open')) modelDropdownOptions.classList.add('hidden'); }, 200); // Match CSS transition duration
+             }
+        });
+
+        // 3. Handle Option Selection
+        modelDropdownOptions.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            const option = target.closest('.custom-dropdown-option') as HTMLDivElement | null;
+
+            if (option) {
+                const newEndpoint = option.dataset.endpoint;
+                const newModelId = option.dataset.value;
+                const newLabel = option.dataset.label; // Get the shorter label
+
+                if (newEndpoint && newModelId && newLabel) {
+                    currentApiEndpoint = newEndpoint;
+                    currentModelName = newModelId;
+                    currentModelLabel = newLabel;
+
+                    modelDropdownLabel.textContent = newLabel; // Update button text
+
+                    console.log(`🔄 Model selection changed:`);
+                    console.log(`   Label: ${currentModelLabel}`);
+                    console.log(`   ID: ${currentModelName}`);
+                    console.log(`   Endpoint: ${currentApiEndpoint}`);
+
+                    // Optional: Add 'selected' class styling if desired
+
+                } else {
+                    console.warn("Selected model option missing required data attributes (endpoint, value, label).");
+                }
+
+                customModelDropdown.classList.remove('open'); // Close dropdown
+                modelDropdownButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // 4. Close Dropdown on Outside Click (Combine with quality if needed)
+        document.addEventListener('click', (event) => {
+            if (!customModelDropdown.contains(event.target as Node) && customModelDropdown.classList.contains('open')) {
+                 customModelDropdown.classList.remove('open');
+                 modelDropdownButton.setAttribute('aria-expanded', 'false');
+            }
+             // Also close quality dropdown if open and click is outside it
+             if (customQualityDropdown && !customQualityDropdown.contains(event.target as Node) && customQualityDropdown.classList.contains('open')) {
+                 customQualityDropdown.classList.remove('open');
+                 if (qualityDropdownButton) qualityDropdownButton.setAttribute('aria-expanded', 'false');
+             }
+        });
+
+        // 5. Close Dropdown on Escape key (Combine with quality/modals)
+         document.addEventListener('keydown', (event) => {
+             if (event.key === 'Escape') {
+                 // Close model dropdown
+                 if (customModelDropdown.classList.contains('open')) {
+                     customModelDropdown.classList.remove('open');
+                     modelDropdownButton.setAttribute('aria-expanded', 'false');
+                 }
+                 // Close quality dropdown
+                 if (customQualityDropdown && customQualityDropdown.classList.contains('open')) {
+                     customQualityDropdown.classList.remove('open');
+                     if (qualityDropdownButton) qualityDropdownButton.setAttribute('aria-expanded', 'false');
+                 }
+                 // Close HowToUse modal
+                 if (howToUseModalOverlay && howToUseModalOverlay.classList.contains('open')) {
+                     closeModal(); // Use existing closeModal function
+                 }
+                 // Close Settings modal
+                 if (settingsModalOverlay && settingsModalOverlay.classList.contains('open')) {
+                     settingsModalOverlay.classList.remove('open');
+                     // settingsModalOverlay.classList.add('hidden'); // Optional based on CSS
+                 }
+             }
+        });
+        // Note: Might need to adjust the 'escapeListenerExists' logic if used previously
+
+    } else {
+        console.warn("Custom model dropdown elements not found, cannot attach listeners.");
+        if (!customModelDropdown) console.warn("Missing: #customModelDropdown");
+        if (!modelDropdownButton) console.warn("Missing: #modelDropdownButton");
+        if (!modelDropdownLabel) console.warn("Missing: #modelDropdownLabel");
+        if (!modelDropdownOptions) console.warn("Missing: #modelDropdownOptions");
+    }
+    // === END Custom Model Dropdown Logic ===
+
     // --- Function to Update UI based on Language ---
     function updateUIText(lang: string) {
         const langPack = translations[lang] || translations['en']; // Fallback to English
@@ -976,19 +1142,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const updateButtonText = (actionName: string, translationKey: string) => {
                 // Select using the data-action attribute
                 const btn = previewActionsFooter.querySelector(`button[data-action="${actionName}"]`) as HTMLButtonElement | null;
-                if (btn) {
-                    const textNode = Array.from(btn.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
-                    if (textNode) {
-                        textNode.textContent = ` ${langPack[translationKey]}`; // Add space before text
-                    } else {
-                        console.warn(`Could not find text node for button with data-action: ${actionName}`);
-                    }
-                } else {
-                     console.warn(`Could not find button with data-action: ${actionName}`);
-                }
+                // --- REMOVE THE FOLLOWING 'if (btn)' BLOCK ---
+                // if (btn) {
+                //     const textNode = Array.from(btn.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+                //     if (textNode) {
+                //         textNode.textContent = ` ${langPack[translationKey]}`; // Add space before text
+                //     } else {
+                //         console.warn(`Could not find text node for button with data-action: ${actionName}`);
+                //     }
+                // } else {
+                //      console.warn(`Could not find button with data-action: ${actionName}`);
+                // }
+                 // --- Add a simple log instead if the button is missing, since we expect it now ---
+                 if (!btn) {
+                     console.log(`(Translation skipped: Preview action button with data-action="${actionName}" not found - likely commented out in HTML)`);
+                 }
             };
 
-            // Call the helper using the data-action values
+            // Call the helper using the data-action values - These calls will now just log warnings if buttons are missing
             updateButtonText('fix-tint', 'previewAction_fixTint');
             updateButtonText('upscale', 'previewAction_upscale');
             updateButtonText('create-video', 'previewAction_createVideo');

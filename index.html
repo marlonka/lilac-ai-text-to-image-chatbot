@@ -104,7 +104,27 @@
                                 </div>
                             </div>
                             <!-- End Custom Quality Dropdown -->
-                            <span class="model-indicator">gpt-image-1</span>
+                            <!-- Model Selector Dropdown (NEW STRUCTURE) -->
+                            <div id="customModelDropdown" class="custom-dropdown model-selector-dropdown">
+                                <button id="modelDropdownButton" class="btn-input-pill" aria-haspopup="listbox" aria-expanded="false">
+                                    <!-- Icon (Optional) -->
+                                    <!-- <svg class="icon size-4"><use xlink:href="#icon-cube"></use></svg> -->
+                                    <span id="modelDropdownLabel">Gemini Flash</span> <!-- Default to Gemini -->
+                                    <svg class="icon size-4 chevron"><use xlink:href="#icon-chevron-down"></use></svg>
+                                </button>
+                                <div id="modelDropdownOptions" class="custom-dropdown-options hidden" role="listbox">
+                                    <!-- Option 1: Gemini -->
+                                    <div class="custom-dropdown-option" role="option" data-value="gemini-2.0-flash-exp" data-endpoint="/api/generate-gemini" data-label="Gemini Flash">
+                                        Gemini Flash <span class="option-detail">(gemini-2.0-flash-exp)</span>
+                                    </div>
+                                    <!-- Option 2: OpenAI - UPDATE DETAIL -->
+                                    <div class="custom-dropdown-option" role="option" data-value="openai" data-endpoint="/api/generate" data-label="GPT-image-1">
+                                        GPT-image-1 <span class="option-detail">(gpt-image-1)</span> <!-- Changed detail -->
+                                    </div>
+                                    <!-- Add more models here if needed -->
+                                </div>
+                            </div>
+                            <!-- End Model Selector Dropdown -->
                         </div>
                         <div class="controls-right">
                             <button id="howToUseButton" class="btn-text-input how-to-use">

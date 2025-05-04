@@ -5,20 +5,62 @@ import OpenAI from 'openai'; // Import OpenAI
 import { OpenAIError, APIError } from 'openai/error'; // Import specific error types
 import { File } from 'node:buffer'; // Explicitly import Node's File
 import { Buffer } from 'node:buffer'; // Import Buffer explicitly
+import { GoogleGenAI, Content, Part, GenerateContentResponse, Modality } from '@google/genai'; // <-- Corrected Gemini SDK import name
 
 // Load environment variables from .env file
 dotenv.config();
 
-// --- Check for API Key ---
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  console.error("🔴 OPENAI_API_KEY is not set in the .env file.");
-  process.exit(1); // Exit the process if the key is missing
+// --- Check for API Keys ---
+const openaiApiKey = process.env.OPENAI_API_KEY;
+// const googleApiKey = process.env.GOOGLE_API_KEY; // <-- REMOVE Google API Key loading
+
+if (!openaiApiKey) {
+  console.warn("🟠 OPENAI_API_KEY is not set in the .env file. OpenAI features will be unavailable.");
+  // process.exit(1); 
+}
+// REMOVE Google API Key check
+// if (!googleApiKey) { 
+//   console.warn("🟠 GOOGLE_API_KEY is not set in the .env file. Gemini features will be unavailable.");
+// }
+
+// --- Instantiate OpenAI Client (Conditional) ---
+let openai: OpenAI | null = null;
+if (openaiApiKey) {
+  openai = new OpenAI({ apiKey: openaiApiKey });
+  console.log("✅ OpenAI client instantiated successfully.");
+} else {
+  console.log("➡️ OpenAI client not instantiated (key missing).");
 }
 
-// --- Instantiate OpenAI Client ---
-const openai = new OpenAI({ apiKey });
-console.log("✅ OpenAI client instantiated successfully.");
+// --- Instantiate Google GenAI Client for Vertex AI ---
+let genAI: GoogleGenAI | null = null; 
+try {
+    const vertexProject = "librechattergemini"; // Your Project ID
+    const vertexLocation = "us-central1";   // Location 
+    
+    console.log(`🧬 Initializing Google GenAI client for Vertex AI (Project: ${vertexProject}, Location: ${vertexLocation})...`);
+    console.log("   (Using vertexai: true, relying on ADC)");
+    
+    // Initialize using the CORRECT pattern including vertexai: true
+    genAI = new GoogleGenAI({ 
+        vertexai: true,        // <--- ADDED this crucial flag
+        project: vertexProject, 
+        location: vertexLocation 
+    }); 
+
+    // Simple check to see if client object seems valid (can refine later)
+    if (genAI && typeof genAI.models?.generateContent === 'function') {
+         console.log("✅ Google GenAI client for Vertex AI appears instantiated successfully.");
+    } else {
+        throw new Error("GoogleGenAI client initialization did not result in a valid object.");
+    }
+
+} catch (error) {
+    console.error("🔴 Failed to initialize Google GenAI client for Vertex AI:", error);
+    console.error("   Make sure Application Default Credentials (ADC) are correctly configured and the Vertex AI API is enabled for the project.");
+    genAI = null; // Ensure client is null if initialization failed
+}
+// --- End Google GenAI Client Initialization ---
 
 const app: Express = express();
 const port = process.env.PORT || 3001; // Use port from .env or default to 3001
@@ -56,6 +98,22 @@ async function dataUrlToImageFile(dataUrl: string, index: number): Promise<File>
     return new File([buffer], filename, { type: blob.type });
 }
 
+// --- Helper Function: Data URL to Base64 Data and Mime Type ---
+// Gemini SDK needs mime type and base64 data separately
+function dataUrlToGeminiData(dataUrl: string): { mimeType: string; data: string } {
+    const parts = dataUrl.split(',');
+    if (parts.length !== 2) {
+        throw new Error('Invalid data URL format');
+    }
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    if (!mimeMatch || mimeMatch.length < 2) {
+        throw new Error('Could not extract mime type from data URL');
+    }
+    const mimeType = mimeMatch[1];
+    const base64Data = parts[1];
+    return { mimeType, data: base64Data };
+}
+
 // --- Type Definitions ---
 // Define allowed quality values (matching frontend)
 type ImageQuality = 'auto' | 'low' | 'medium' | 'high';
@@ -77,6 +135,12 @@ app.post('/api/generate', (async (req: Request<{}, {}, GenerateRequestBody>, res
     console.log(`   Prompt: "${prompt}"`);
     console.log(`   Image Context URLs provided: ${imageContextUrls?.length || 0}`);
     console.log(`   Requested Quality: ${quality || 'auto (default)'}`); // Log quality
+
+    // --- Add check for OpenAI client ---
+    if (!openai) {
+        console.error("🔴 OpenAI client not initialized. Cannot process request for /api/generate.");
+        return res.status(503).json({ success: false, message: 'OpenAI service is unavailable (client not initialized).' });
+    }
 
     // --- Basic Input Validation ---
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -194,6 +258,156 @@ app.post('/api/generate', (async (req: Request<{}, {}, GenerateRequestBody>, res
             console.error("🔴 Headers already sent, cannot send error response to client.");
         }
     }
+}) as RequestHandler);
+
+// --- NEW GEMINI API Route ---
+// Define interface for Gemini request body (can be refined later)
+interface GeminiGenerateRequestBody {
+    prompt: string;
+    imageContextUrls?: string[];
+    // Add other Gemini-specific parameters if needed
+}
+
+app.post('/api/generate-gemini', (async (req: Request<{}, {}, GeminiGenerateRequestBody>, res: Response) => {
+    console.log('🔄 Received request for /api/generate-gemini:');
+    const { prompt, imageContextUrls } = req.body;
+
+    console.log(`   Prompt: "${prompt}"`);
+    console.log(`   Image Context URLs provided: ${imageContextUrls?.length || 0}`);
+
+    // --- Basic Input Validation ---
+    // Allow empty prompt if context images are provided
+    const hasContextImages = imageContextUrls && imageContextUrls.length > 0;
+    if ((!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) && !hasContextImages) {
+         return res.status(400).json({ success: false, message: 'Prompt is required when no context images are provided.' });
+    }
+    // Prompt can be empty if images ARE provided
+
+    // Check if Gemini client is available
+    if (!genAI) {
+        console.error("🔴 Gemini client not initialized. Cannot process request.");
+        return res.status(503).json({ success: false, message: 'Gemini service is unavailable (client not initialized).' });
+    }
+
+    try {
+        // --- Define Model and Config ---
+        const modelId = "gemini-2.0-flash-exp";
+        const generationConfig = {
+            responseModalities: [Modality.TEXT, Modality.IMAGE]
+        };
+
+        // --- Prepare contents (Handle multimodal input) ---
+        let contents: Content[];
+        const userParts: Part[] = []; // Array to hold all parts for the user role
+
+        if (hasContextImages) {
+            console.log(`🖼️ Processing ${imageContextUrls.length} context image(s)...`);
+            try {
+                for (const dataUrl of imageContextUrls) {
+                    const { mimeType, data } = dataUrlToGeminiData(dataUrl); // Use helper function
+                    userParts.push({ inlineData: { mimeType, data } });
+                }
+                 console.log(`   ✅ Successfully converted ${imageContextUrls.length} image URLs to inlineData parts.`);
+            } catch (convertError) {
+                 console.error("🔴 Error converting data URL to Gemini format:", convertError);
+                 // Use return here
+                 return res.status(400).json({ success: false, message: `Failed to process image data: ${convertError instanceof Error ? convertError.message : 'Unknown conversion error'}` });
+            }
+        }
+
+        // Add the text prompt (if provided) AFTER the images
+        // Gemini generally expects [image, image, ..., text] structure for multimodal
+        if (prompt && prompt.trim().length > 0) {
+            userParts.push({ text: prompt });
+            console.log("   ➕ Added text prompt part.");
+        } else if (!hasContextImages) {
+             // This case should be caught by initial validation, but double-check
+             console.error("🔴 Attempting to send without prompt or images.");
+             return res.status(400).json({ success: false, message: 'Cannot send request without a text prompt or context images.' });
+        } else {
+             console.log("   📝 Sending image context without an additional text prompt.");
+        }
+
+        // Structure the final contents array
+        contents = [{ role: "user", parts: userParts }];
+
+        console.log(`📞 Calling Gemini models.generateContent (${modelId}, ${hasContextImages ? 'Multimodal' : 'Text-only'})...`);
+
+        // --- Make the API Call ---
+        const result = await genAI.models.generateContent({
+            model: modelId,
+            contents: contents,
+            config: generationConfig
+        });
+
+        console.log("✅ Gemini API call successful.");
+
+        // --- Parse Response ---
+        let responseText: string | null = null;
+        let responseImageBase64: string | null = null;
+
+        if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts) {
+            console.log(`   Received ${result.candidates[0].content.parts.length} parts from Gemini.`);
+            for (const part of result.candidates[0].content.parts) {
+                if (part.text && !responseText) {
+                    responseText = part.text;
+                    console.log("    extracted text part.");
+                }
+                if (part.inlineData && part.inlineData.data && !responseImageBase64) {
+                    responseImageBase64 = part.inlineData.data;
+                    console.log(`   extracted image part (mime type: ${part.inlineData.mimeType}).`);
+                }
+                if (responseText && responseImageBase64) break;
+            }
+        } else {
+            console.warn("🟠 Gemini response structure might be unexpected or empty:", JSON.stringify(result, null, 2));
+        }
+
+        // === Provide default text if only image is received === (MODIFIED SECTION)
+        if (responseImageBase64 && !responseText) {
+            if (hasContextImages) {
+                responseText = "Edited image based on your prompt and context."; // Default for multimodal edit
+                console.log("   ℹ️ Generated default text for multimodal edit response.");
+            } else {
+                responseText = "Generated image based on your prompt."; // Default for text-to-image
+                console.log("   ℹ️ Generated default text for text-to-image response.");
+            }
+        }
+        // ========================================================
+
+        // Check if we still have nothing usable (including handling block reasons)
+        if (!responseText && !responseImageBase64) {
+            console.warn("🟠 Failed to extract usable text or image from Gemini response.");
+            const blockReason = result?.promptFeedback?.blockReason;
+            const safetyRatings = result?.candidates?.[0]?.safetyRatings;
+            let message = "Gemini generated a response, but no usable text or image content was found.";
+            if(blockReason) {
+                 message += ` Block Reason: ${blockReason}.`;
+                 console.warn(`   Block Reason: ${blockReason}`);
+                 if (safetyRatings) {
+                     console.warn(`   Safety Ratings: ${JSON.stringify(safetyRatings)}`);
+                 }
+            }
+            return res.status(500).json({ success: false, message: message });
+        }
+
+        console.log("✅ Successfully parsed Gemini response.");
+        res.json({
+            success: true,
+            text: responseText, // Send back extracted text OR the default text
+            image: responseImageBase64
+        });
+
+    } catch (error) {
+       console.error("🔴 Error during Gemini API call or processing:", error);
+       let message = "An unexpected error occurred processing the Gemini request.";
+       if (error instanceof Error) {
+           message = error.message;
+       }
+       // Use return here
+       return res.status(500).json({ success: false, message: message });
+    }
+
 }) as RequestHandler);
 
 // --- Server Start ---
